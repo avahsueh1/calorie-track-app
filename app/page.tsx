@@ -1,3 +1,13 @@
+import {
+  calculateDailySummary,
+  calculateTdee,
+} from "../lib/calories";
+import type {
+  ActivityLogInput,
+  FoodLogInput,
+  UserProfile,
+} from "../types";
+
 const colors = {
   bg: "#0F0F0F",
   shell: "#18181B",
@@ -11,13 +21,25 @@ const colors = {
   border: "#27272A",
 };
 
-const data = {
-  eaten: 1420,
-  burned: 320,
-  net: 1100,
-  tdee: 2000,
-  remaining: 900,
+const sampleProfile: UserProfile = {
+  age: 28,
+  sex: "female",
+  heightCm: 165,
+  weightKg: 56,
+  activityLevel: "moderate",
 };
+
+const sampleFoodLogs: FoodLogInput[] = [
+  { caloriesPerServing: 520, servings: 1 },
+  { caloriesPerServing: 450, servings: 2 },
+];
+
+const sampleActivityLogs: ActivityLogInput[] = [
+  { metValue: 5, weightKg: 64, durationMinutes: 60 },
+];
+
+const tdee = calculateTdee(sampleProfile);
+const summary = calculateDailySummary(sampleFoodLogs, sampleActivityLogs, tdee);
 
 const sidebarItems = [
   { icon: "◉", label: "Home", active: true },
@@ -90,20 +112,22 @@ function MiniBars({
 }
 
 export default function HomePage() {
-  const budgetPercent = Math.round((data.eaten / data.tdee) * 100);
+  const budgetPercent = Math.round(
+    (summary.totalFoodCalories / summary.tdee) * 100,
+  );
 
   const summaryCards = [
     {
       label: "Calories Eaten",
-      value: `${formatNumber(data.eaten)}`,
+      value: `${formatNumber(summary.totalFoodCalories)}`,
       unit: "kcal",
-      detail: `of ${formatNumber(data.tdee)} kcal budget`,
+      detail: `of ${formatNumber(summary.tdee)} kcal budget`,
       accent: colors.lime,
       barColor: colors.lime,
     },
     {
       label: "Calories Burned",
-      value: `${formatNumber(data.burned)}`,
+      value: `${formatNumber(summary.totalActivityCalories)}`,
       unit: "kcal",
       detail: "From activity",
       accent: colors.muted,
@@ -111,7 +135,7 @@ export default function HomePage() {
     },
     {
       label: "Net After Exercise",
-      value: `${formatNumber(data.net)}`,
+      value: `${formatNumber(summary.netCalories)}`,
       unit: "kcal",
       detail: "Food intake minus activity burn",
       accent: colors.muted,
@@ -255,11 +279,12 @@ export default function HomePage() {
                   lineHeight: 1.1,
                 }}
               >
-                {formatNumber(data.remaining)}{" "}
+                {formatNumber(summary.remainingCalories)}{" "}
                 <span style={{ color: colors.lime }}>kcal left</span>
               </p>
               <p style={{ margin: "6px 0 16px", fontSize: "0.8rem", color: colors.muted }}>
-                {formatNumber(data.eaten)} / {formatNumber(data.tdee)} kcal used
+                {formatNumber(summary.totalFoodCalories)} /{" "}
+                {formatNumber(summary.tdee)} kcal used
               </p>
               <div
                 style={{
@@ -312,7 +337,7 @@ export default function HomePage() {
                   lineHeight: 1,
                 }}
               >
-                {formatNumber(data.tdee)}
+                {formatNumber(summary.tdee)}
               </p>
               <p style={{ margin: "6px 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
                 kcal / day
