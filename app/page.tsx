@@ -14,7 +14,6 @@ import {
   shellStyle,
 } from "../components/dashboard/theme";
 import {
-  getSampleCheckIn,
   getSampleDailySummary,
   getSampleMacros,
   patternInsightsMessage,
@@ -25,7 +24,6 @@ import {
 export default function HomePage() {
   const sampleDailySummary = getSampleDailySummary();
   const sampleMacros = getSampleMacros();
-  const sampleCheckIn = getSampleCheckIn();
 
   return (
     <div style={pageOuterStyle()}>
@@ -43,7 +41,7 @@ export default function HomePage() {
             <MacroBars macros={sampleMacros} />
           </section>
 
-          <TodayCheckInCard checkIn={sampleCheckIn} />
+          <TodayCheckInCard />
           <DailySummaryStats summary={sampleDailySummary} />
           <CycleInsightCard cycle={sampleCycleContext} />
           <PatternInsightsCard message={patternInsightsMessage} />

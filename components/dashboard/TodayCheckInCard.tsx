@@ -1,20 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { useCheckIn } from "../providers/CheckInProvider";
+import type { DailyCheckIn } from "../../types";
 import type {
   CravingLevel,
-  InteractiveCheckInState,
   ScaleRating,
 } from "../../types/wellness";
 import { cardStyle, colors, labelStyle, sans, sectionTitleStyle } from "./theme";
 
-interface TodayCheckInCardProps {
-  checkIn: InteractiveCheckInState;
-}
+type DashboardCheckInFields = Pick<
+  DailyCheckIn,
+  "mood" | "energy" | "hunger" | "sleepQuality" | "stress" | "cravings"
+>;
 
 const scaleFields: {
   key: keyof Pick<
-    InteractiveCheckInState,
+    DashboardCheckInFields,
     "mood" | "energy" | "hunger" | "sleepQuality" | "stress"
   >;
   label: string;
@@ -197,7 +199,7 @@ function CravingSelector({
   );
 }
 
-function buildSummarySentence(saved: InteractiveCheckInState): string {
+function buildSummarySentence(saved: DailyCheckIn): string {
   const energy = scaleWords[saved.energy - 1].toLowerCase();
   const mood = scaleWords[saved.mood - 1].toLowerCase();
   const stress = scaleWords[saved.stress - 1].toLowerCase();
@@ -348,7 +350,7 @@ function MetricSummaryCell({
   );
 }
 
-function CheckInSummary({ saved }: { saved: InteractiveCheckInState }) {
+function CheckInSummary({ saved }: { saved: DailyCheckIn }) {
   const metrics = [
     {
       icon: "✦",
@@ -423,14 +425,27 @@ function CheckInSummary({ saved }: { saved: InteractiveCheckInState }) {
   );
 }
 
-export function TodayCheckInCard({ checkIn }: TodayCheckInCardProps) {
-  const [saved, setSaved] = useState<InteractiveCheckInState>(checkIn);
-  const [draft, setDraft] = useState<InteractiveCheckInState>(checkIn);
+function pickDashboardFields(value: DailyCheckIn): DashboardCheckInFields {
+  return {
+    mood: value.mood,
+    energy: value.energy,
+    hunger: value.hunger,
+    sleepQuality: value.sleepQuality,
+    stress: value.stress,
+    cravings: value.cravings,
+  };
+}
+
+export function TodayCheckInCard() {
+  const { checkIn, updateCheckIn } = useCheckIn();
+  const [draft, setDraft] = useState<DashboardCheckInFields>(() =>
+    pickDashboardFields(checkIn),
+  );
   const [isEditing, setIsEditing] = useState(false);
   const [justUpdated, setJustUpdated] = useState(false);
 
   function openEditor() {
-    setDraft({ ...saved });
+    setDraft(pickDashboardFields(checkIn));
     setIsEditing(true);
     setJustUpdated(false);
   }
@@ -440,7 +455,7 @@ export function TodayCheckInCard({ checkIn }: TodayCheckInCardProps) {
   }
 
   function handleSave() {
-    setSaved(draft);
+    updateCheckIn(draft);
     setIsEditing(false);
     setJustUpdated(true);
   }
@@ -488,7 +503,7 @@ export function TodayCheckInCard({ checkIn }: TodayCheckInCardProps) {
       )}
 
       {!isEditing ? (
-        <CheckInSummary saved={saved} />
+        <CheckInSummary saved={checkIn} />
       ) : (
         <>
           <div
