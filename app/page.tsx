@@ -1,49 +1,51 @@
+"use client";
+
 import { BottomNav } from "../components/dashboard/BottomNav";
 import { CycleInsightCard } from "../components/dashboard/CycleInsightCard";
 import { DailySummaryStats } from "../components/dashboard/DailySummaryStats";
 import { DashboardHeader } from "../components/dashboard/DashboardHeader";
-import { MacroBars } from "../components/dashboard/MacroBars";
-import { NourishmentRing } from "../components/dashboard/NourishmentRing";
+import { NourishmentCard } from "../components/dashboard/NourishmentCard";
 import { PatternInsightsCard } from "../components/dashboard/PatternInsightsCard";
 import { TodayCheckInCard } from "../components/dashboard/TodayCheckInCard";
 import {
-  cardStyle,
-  layout,
   mainContentStyle,
   pageOuterStyle,
   shellStyle,
 } from "../components/dashboard/theme";
 import {
-  getSampleDailySummary,
-  getSampleMacros,
-  patternInsightsMessage,
-  sampleCycleContext,
-  sampleUser,
-} from "../data/sampleDashboard";
+  useCycleContext,
+  useDailyLog,
+  useProfile,
+} from "../components/providers/AppStateProvider";
+import { getProfileFirstName } from "../data/defaultProfile";
+import { patternInsightsMessage } from "../data/sampleDashboard";
 
 export default function HomePage() {
-  const sampleDailySummary = getSampleDailySummary();
-  const sampleMacros = getSampleMacros();
+  const { dailySummary, macros } = useDailyLog();
+  const { profile, focusMessage } = useProfile();
+  const { cycleContext } = useCycleContext();
 
   return (
     <div style={pageOuterStyle()}>
       <div style={shellStyle()}>
         <main style={mainContentStyle()}>
-          <DashboardHeader user={sampleUser} cycle={sampleCycleContext} />
-
-          <section
-            style={{
-              ...cardStyle(),
-              padding: `${layout.cardPadding} 16px 20px`,
+          <DashboardHeader
+            user={{
+              name: getProfileFirstName(profile.name),
+              focusMessage,
             }}
-          >
-            <NourishmentRing summary={sampleDailySummary} />
-            <MacroBars macros={sampleMacros} />
-          </section>
+            cycle={cycleContext}
+          />
+
+          <NourishmentCard
+            key={`nourishment-${dailySummary.eaten}-${dailySummary.burned}-${dailySummary.net}-${dailySummary.tdee}`}
+            summary={dailySummary}
+            macros={macros}
+          />
 
           <TodayCheckInCard />
-          <DailySummaryStats summary={sampleDailySummary} />
-          <CycleInsightCard cycle={sampleCycleContext} />
+          <DailySummaryStats summary={dailySummary} />
+          <CycleInsightCard cycle={cycleContext} />
           <PatternInsightsCard message={patternInsightsMessage} />
         </main>
 

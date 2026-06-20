@@ -1,3 +1,5 @@
+"use client";
+
 import type { DailySummaryDisplay } from "../../types/wellness";
 import { colors, formatNumber, labelStyle, sans, serif } from "./theme";
 

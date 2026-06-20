@@ -3,44 +3,68 @@
 import { useState } from "react";
 import { useCheckIn } from "../providers/CheckInProvider";
 import type { DailyCheckIn } from "../../types";
-import type {
-  CravingLevel,
-  ScaleRating,
+import {
+  CHECK_IN_SCALE_FIELDS,
+  CHECK_IN_SCALE_OPTIONS,
+  CHECK_IN_SCALE_WORDS,
+  CHECK_IN_SEVERITY_FIELDS,
+  CHECK_IN_SEVERITY_OPTIONS,
+  cloneDailyCheckIn,
+  formatSeverityLabel,
+  type CheckInScaleField,
+  type CheckInSeverityField,
+  type CravingLevel,
+  type ScaleRating,
 } from "../../types/wellness";
 import { cardStyle, colors, labelStyle, sans, sectionTitleStyle } from "./theme";
 
-type DashboardCheckInFields = Pick<
-  DailyCheckIn,
-  "mood" | "energy" | "hunger" | "sleepQuality" | "stress" | "cravings"
->;
+const summaryColors = {
+  card: "#FFFDFB",
+  inner: "#FBFAF7",
+  text: "#3C2B24",
+  secondary: "#7D7068",
+  label: "#9A8176",
+  terracotta: "#B97663",
+  terracottaDark: "#744336",
+  blushBg: "#FFF7F3",
+  blushBorder: "#E8C2B6",
+  sage: "#7E9A7C",
+  sageBg: "#EEF4ED",
+  border: "#E6D7CB",
+  divider: "#EFE5DD",
+  lavenderBg: "#ECE7F5",
+  lavenderIcon: "#8D7BB8",
+  goldBg: "#F7EFE8",
+  goldIcon: "#B89A6D",
+  blueBg: "#EAF2FA",
+  blueIcon: "#7EA6C8",
+};
 
-const scaleFields: {
-  key: keyof Pick<
-    DashboardCheckInFields,
-    "mood" | "energy" | "hunger" | "sleepQuality" | "stress"
-  >;
-  label: string;
-  summaryLabel: string;
-}[] = [
-  { key: "mood", label: "Mood", summaryLabel: "Mood" },
-  { key: "energy", label: "Energy", summaryLabel: "Energy" },
-  { key: "hunger", label: "Hunger", summaryLabel: "Hunger" },
-  { key: "sleepQuality", label: "Sleep", summaryLabel: "Sleep" },
-  { key: "stress", label: "Stress", summaryLabel: "Stress" },
-];
+const scaleWords = [...CHECK_IN_SCALE_WORDS];
 
-const scaleOptions: ScaleRating[] = [1, 2, 3, 4, 5];
+function summaryCardStyle() {
+  return {
+    backgroundColor: summaryColors.card,
+    borderRadius: "26px",
+    border: `1px solid ${summaryColors.border}`,
+    padding: "24px",
+    boxShadow: "0 10px 28px rgba(60, 43, 36, 0.06)",
+  };
+}
 
-const cravingOptions: { value: CravingLevel; label: string }[] = [
-  { value: "none", label: "None" },
-  { value: "mild", label: "Mild" },
-  { value: "strong", label: "Strong" },
-];
-
-const scaleWords = ["Very low", "Low", "Moderate", "Good", "High"];
-
-function formatCravingSummary(value: CravingLevel): string {
-  return value.charAt(0).toUpperCase() + value.slice(1);
+function updateSummaryButtonStyle() {
+  return {
+    fontSize: "0.72rem",
+    fontWeight: 600,
+    color: summaryColors.terracottaDark,
+    backgroundColor: summaryColors.blushBg,
+    padding: "7px 14px",
+    borderRadius: "999px",
+    border: `1px solid ${summaryColors.blushBorder}`,
+    cursor: "pointer",
+    fontFamily: sans,
+    flexShrink: 0,
+  };
 }
 
 function pillButtonStyle(variant: "primary" | "secondary" | "ghost") {
@@ -113,7 +137,7 @@ function ScaleSelector({
         role="group"
         aria-label={label}
       >
-        {scaleOptions.map((option) => {
+        {CHECK_IN_SCALE_OPTIONS.map((option) => {
           const selected = value === option;
           return (
             <button
@@ -143,10 +167,12 @@ function ScaleSelector({
   );
 }
 
-function CravingSelector({
+function SeveritySelector({
+  label,
   value,
   onChange,
 }: {
+  label: string;
   value: CravingLevel;
   onChange: (value: CravingLevel) => void;
 }) {
@@ -159,7 +185,7 @@ function CravingSelector({
         border: `1px solid ${colors.border}`,
       }}
     >
-      <p style={{ ...labelStyle(), marginBottom: "8px" }}>Cravings</p>
+      <p style={{ ...labelStyle(), marginBottom: "8px" }}>{label}</p>
       <div
         style={{
           display: "grid",
@@ -167,9 +193,9 @@ function CravingSelector({
           gap: "6px",
         }}
         role="group"
-        aria-label="Cravings"
+        aria-label={label}
       >
-        {cravingOptions.map(({ value: option, label }) => {
+        {CHECK_IN_SEVERITY_OPTIONS.map((option) => {
           const selected = value === option;
           return (
             <button
@@ -190,7 +216,7 @@ function CravingSelector({
                 padding: "6px 4px",
               }}
             >
-              {label}
+              {formatSeverityLabel(option)}
             </button>
           );
         })}
@@ -269,67 +295,96 @@ function scaleHelper(key: string, value: ScaleRating): string {
   return helpers[key]?.[word] ?? "Stay aware";
 }
 
-function cravingHelper(value: CravingLevel): string {
-  if (value === "none") return "Cravings quiet";
-  if (value === "mild") return "Manageable urges";
-  return "Supportive snacks";
+function severityHelper(field: CheckInSeverityField, value: CravingLevel): string {
+  const helpers: Record<CheckInSeverityField, Record<CravingLevel, string>> = {
+    cravings: {
+      none: "Cravings quiet",
+      mild: "Notice and nourish",
+      strong: "Supportive snacks",
+    },
+    bloating: {
+      none: "Feeling comfortable",
+      mild: "Gentle movement may help",
+      strong: "Extra care may help",
+    },
+    soreness: {
+      none: "Body feels recovered",
+      mild: "Move gently today",
+      strong: "Prioritize recovery",
+    },
+  };
+  return helpers[field][value];
 }
 
-function MetricSummaryCell({
+function MetricTile({
   icon,
+  badgeBackground,
+  iconColor,
   label,
   value,
   helper,
 }: {
   icon: string;
+  badgeBackground: string;
+  iconColor: string;
   label: string;
   value: string;
   helper: string;
 }) {
   return (
-    <div
+    <article
       style={{
-        backgroundColor: colors.shell,
-        borderRadius: "16px",
-        padding: "12px",
-        border: `1px solid ${colors.border}`,
+        backgroundColor: summaryColors.card,
+        border: `1px solid ${summaryColors.border}`,
+        borderRadius: "18px",
+        padding: "16px",
         display: "flex",
-        gap: "10px",
+        gap: "12px",
         alignItems: "flex-start",
         minWidth: 0,
       }}
     >
       <span
         style={{
-          width: "32px",
-          height: "32px",
+          width: "38px",
+          height: "38px",
           borderRadius: "50%",
-          backgroundColor: colors.blush + "66",
-          border: `1px solid ${colors.terracottaLight}`,
+          backgroundColor: badgeBackground,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: "0.85rem",
+          fontSize: "0.95rem",
           lineHeight: 1,
           flexShrink: 0,
-          color: colors.terracotta,
+          color: iconColor,
         }}
         aria-hidden="true"
       >
         {icon}
       </span>
       <div style={{ minWidth: 0, flex: 1 }}>
-        <p style={{ ...labelStyle(), marginBottom: "3px", fontSize: "0.62rem" }}>
+        <p
+          style={{
+            margin: "0 0 4px",
+            fontSize: "0.62rem",
+            fontWeight: 600,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: summaryColors.label,
+            fontFamily: sans,
+            lineHeight: 1.3,
+          }}
+        >
           {label}
         </p>
         <p
           style={{
-            margin: "0 0 2px",
-            fontSize: "0.85rem",
-            fontWeight: 600,
-            color: colors.text,
+            margin: "0 0 4px",
+            fontSize: "1.15rem",
+            fontWeight: 700,
+            color: summaryColors.text,
             fontFamily: sans,
-            lineHeight: 1.25,
+            lineHeight: 1.2,
           }}
         >
           {value}
@@ -337,16 +392,16 @@ function MetricSummaryCell({
         <p
           style={{
             margin: 0,
-            fontSize: "0.72rem",
-            color: colors.muted,
+            fontSize: "0.88rem",
+            color: summaryColors.secondary,
             fontFamily: sans,
-            lineHeight: 1.35,
+            lineHeight: 1.4,
           }}
         >
           {helper}
         </p>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -354,50 +409,92 @@ function CheckInSummary({ saved }: { saved: DailyCheckIn }) {
   const metrics = [
     {
       icon: "✦",
+      badgeBackground: summaryColors.blushBg,
+      iconColor: summaryColors.terracotta,
+      key: "mood",
       label: "Mood",
       value: scaleWords[saved.mood - 1],
       helper: scaleHelper("mood", saved.mood),
     },
     {
       icon: "⚡",
+      badgeBackground: summaryColors.goldBg,
+      iconColor: summaryColors.goldIcon,
+      key: "energy",
       label: "Energy",
       value: scaleWords[saved.energy - 1],
       helper: scaleHelper("energy", saved.energy),
     },
     {
       icon: "♡",
+      badgeBackground: summaryColors.sageBg,
+      iconColor: summaryColors.sage,
+      key: "hunger",
       label: "Hunger",
       value: scaleWords[saved.hunger - 1],
       helper: scaleHelper("hunger", saved.hunger),
     },
     {
-      icon: "◎",
-      label: "Cravings",
-      value: formatCravingSummary(saved.cravings),
-      helper: cravingHelper(saved.cravings),
-    },
-    {
       icon: "☾",
+      badgeBackground: summaryColors.lavenderBg,
+      iconColor: summaryColors.lavenderIcon,
+      key: "sleepQuality",
       label: "Sleep",
       value: scaleWords[saved.sleepQuality - 1],
       helper: scaleHelper("sleepQuality", saved.sleepQuality),
     },
     {
       icon: "〜",
+      badgeBackground: summaryColors.blueBg,
+      iconColor: summaryColors.blueIcon,
+      key: "stress",
       label: "Stress",
       value: scaleWords[saved.stress - 1],
       helper: scaleHelper("stress", saved.stress),
     },
+    {
+      icon: "◎",
+      badgeBackground: summaryColors.blushBg,
+      iconColor: summaryColors.terracotta,
+      key: "cravings",
+      label: "Cravings",
+      value: formatSeverityLabel(saved.cravings),
+      helper: severityHelper("cravings", saved.cravings),
+    },
+    {
+      icon: "◌",
+      badgeBackground: summaryColors.goldBg,
+      iconColor: summaryColors.goldIcon,
+      key: "bloating",
+      label: "Bloating",
+      value: formatSeverityLabel(saved.bloating),
+      helper: severityHelper("bloating", saved.bloating),
+    },
+    {
+      icon: "↯",
+      badgeBackground: summaryColors.sageBg,
+      iconColor: summaryColors.sage,
+      key: "soreness",
+      label: "Soreness",
+      value: formatSeverityLabel(saved.soreness),
+      helper: severityHelper("soreness", saved.soreness),
+    },
   ];
 
+  const notesPreview = saved.notes?.trim();
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
       <p
         style={{
           margin: 0,
-          fontSize: "0.82rem",
-          lineHeight: 1.5,
-          color: colors.text,
+          padding: "15px 16px",
+          borderRadius: "18px",
+          backgroundColor: summaryColors.blushBg,
+          border: `1px solid ${summaryColors.blushBorder}`,
+          fontSize: "0.95rem",
+          lineHeight: 1.55,
+          color: summaryColors.terracottaDark,
           fontFamily: sans,
         }}
       >
@@ -407,153 +504,230 @@ function CheckInSummary({ saved }: { saved: DailyCheckIn }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-          gap: "10px",
+          gridTemplateColumns: "repeat(auto-fit, minmax(158px, 1fr))",
+          gap: "12px",
         }}
       >
         {metrics.map((metric) => (
-          <MetricSummaryCell
-            key={metric.label}
+          <MetricTile
+            key={metric.key}
             icon={metric.icon}
+            badgeBackground={metric.badgeBackground}
+            iconColor={metric.iconColor}
             label={metric.label}
             value={metric.value}
             helper={metric.helper}
           />
         ))}
       </div>
+
+      {notesPreview ? (
+        <p
+          style={{
+            margin: 0,
+            padding: "12px 14px",
+            borderRadius: "16px",
+            backgroundColor: summaryColors.inner,
+            fontSize: "0.78rem",
+            lineHeight: 1.5,
+            color: summaryColors.secondary,
+            fontFamily: sans,
+            fontStyle: "italic",
+          }}
+        >
+          “{notesPreview.length > 120 ? `${notesPreview.slice(0, 120)}…` : notesPreview}”
+        </p>
+      ) : null}
     </div>
   );
 }
 
-function pickDashboardFields(value: DailyCheckIn): DashboardCheckInFields {
-  return {
-    mood: value.mood,
-    energy: value.energy,
-    hunger: value.hunger,
-    sleepQuality: value.sleepQuality,
-    stress: value.stress,
-    cravings: value.cravings,
-  };
-}
-
 export function TodayCheckInCard() {
   const { checkIn, updateCheckIn } = useCheckIn();
-  const [draft, setDraft] = useState<DashboardCheckInFields>(() =>
-    pickDashboardFields(checkIn),
-  );
+  const [draft, setDraft] = useState<DailyCheckIn>(() => cloneDailyCheckIn(checkIn));
   const [isEditing, setIsEditing] = useState(false);
   const [justUpdated, setJustUpdated] = useState(false);
 
   function openEditor() {
-    setDraft(pickDashboardFields(checkIn));
+    setDraft(cloneDailyCheckIn(checkIn));
     setIsEditing(true);
     setJustUpdated(false);
   }
 
   function handleCancel() {
+    setDraft(cloneDailyCheckIn(checkIn));
     setIsEditing(false);
   }
 
   function handleSave() {
-    updateCheckIn(draft);
+    updateCheckIn({
+      ...draft,
+      notes: draft.notes?.trim() ?? "",
+    });
     setIsEditing(false);
     setJustUpdated(true);
   }
 
-  function updateDraftScale(
-    key: (typeof scaleFields)[number]["key"],
-    value: ScaleRating,
-  ) {
+  function updateDraftScale(key: CheckInScaleField, value: ScaleRating) {
+    setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateDraftSeverity(key: CheckInSeverityField, value: CravingLevel) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
   const statusLabel = justUpdated ? "Updated just now" : "Checked in today";
 
+  if (isEditing) {
+    return (
+      <section style={{ ...cardStyle(), padding: "16px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "10px",
+            marginBottom: "12px",
+          }}
+        >
+          <h2 style={sectionTitleStyle()}>Today&apos;s check-in</h2>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+          }}
+        >
+          {CHECK_IN_SCALE_FIELDS.map(({ key, label }) => (
+            <ScaleSelector
+              key={key}
+              label={label}
+              value={draft[key]}
+              onChange={(value) => updateDraftScale(key, value)}
+            />
+          ))}
+          {CHECK_IN_SEVERITY_FIELDS.map(({ key, label }) => (
+            <SeveritySelector
+              key={key}
+              label={label}
+              value={draft[key]}
+              onChange={(value) => updateDraftSeverity(key, value)}
+            />
+          ))}
+          <div
+            style={{
+              backgroundColor: colors.shell,
+              borderRadius: "14px",
+              padding: "10px 12px",
+              border: `1px solid ${colors.border}`,
+            }}
+          >
+            <label
+              htmlFor="dashboard-check-in-notes"
+              style={{ ...labelStyle(), display: "block", marginBottom: "8px" }}
+            >
+              Notes (optional)
+            </label>
+            <textarea
+              id="dashboard-check-in-notes"
+              value={draft.notes ?? ""}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  notes: event.target.value,
+                }))
+              }
+              placeholder="Anything you want to remember about today..."
+              rows={3}
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                borderRadius: "12px",
+                border: `1px solid ${colors.border}`,
+                padding: "10px 12px",
+                fontSize: "0.82rem",
+                lineHeight: 1.45,
+                fontFamily: sans,
+                color: colors.text,
+                backgroundColor: colors.card,
+                resize: "vertical",
+              }}
+            />
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "8px",
+            marginTop: "14px",
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleCancel}
+            style={pillButtonStyle("secondary")}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            style={pillButtonStyle("primary")}
+          >
+            Update Check-In
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section style={{ ...cardStyle(), padding: "16px" }}>
+    <section style={summaryCardStyle()}>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
-          gap: "10px",
-          marginBottom: !isEditing && justUpdated ? "6px" : "12px",
+          alignItems: "flex-start",
+          gap: "12px",
+          marginBottom: "18px",
         }}
       >
-        <h2 style={sectionTitleStyle()}>Today&apos;s check-in</h2>
-        {!isEditing && (
-          <button type="button" onClick={openEditor} style={pillButtonStyle("ghost")}>
-            Update
-          </button>
-        )}
+        <div style={{ minWidth: 0 }}>
+          <h2
+            style={{
+              margin: 0,
+              fontFamily: sans,
+              fontSize: "1.35rem",
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              lineHeight: 1.2,
+              color: summaryColors.text,
+            }}
+          >
+            Today&apos;s check-in
+          </h2>
+          <p
+            style={{
+              margin: "6px 0 0",
+              fontSize: "0.74rem",
+              color: summaryColors.sage,
+              fontWeight: 600,
+              fontFamily: sans,
+            }}
+          >
+            {statusLabel}
+          </p>
+        </div>
+        <button type="button" onClick={openEditor} style={updateSummaryButtonStyle()}>
+          Update
+        </button>
       </div>
 
-      {!isEditing && (
-        <p
-          style={{
-            margin: "0 0 12px",
-            fontSize: "0.72rem",
-            color: justUpdated ? colors.sage : colors.muted,
-            fontWeight: justUpdated ? 600 : 500,
-            fontFamily: sans,
-          }}
-        >
-          {statusLabel}
-        </p>
-      )}
-
-      {!isEditing ? (
-        <CheckInSummary saved={checkIn} />
-      ) : (
-        <>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-            }}
-          >
-            {scaleFields.map(({ key, label }) => (
-              <ScaleSelector
-                key={key}
-                label={label}
-                value={draft[key]}
-                onChange={(value) => updateDraftScale(key, value)}
-              />
-            ))}
-            <CravingSelector
-              value={draft.cravings}
-              onChange={(cravings) =>
-                setDraft((current) => ({ ...current, cravings }))
-              }
-            />
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: "8px",
-              marginTop: "14px",
-            }}
-          >
-            <button
-              type="button"
-              onClick={handleCancel}
-              style={pillButtonStyle("secondary")}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              style={pillButtonStyle("primary")}
-            >
-              Update Check-In
-            </button>
-          </div>
-        </>
-      )}
+      <CheckInSummary saved={checkIn} />
     </section>
   );
 }

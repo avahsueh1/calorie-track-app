@@ -52,3 +52,18 @@ export type DailyTargetMode =
   | "gentle_deficit"
   | "performance"
   | "recovery";
+
+export type LifeStage =
+  | "regular_cycle"
+  | "irregular_cycle"
+  | "perimenopause"
+  | "menopause"
+  | "prefer_not_to_say";
+
+export interface CycleContext {
+  cycleTrackingEnabled: boolean;
+  cycleDay?: number;
+  estimatedPhase?: string;
+  periodExpectedInDays?: number;
+  lifeStage?: LifeStage;
+}

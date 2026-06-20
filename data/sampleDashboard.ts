@@ -1,36 +1,65 @@
-import {
-  calculateDailySummary,
-  calculateTdee,
-} from "../lib/calories";
-import type {
-  ActivityLogInput,
-  DailyCheckIn,
-  FoodLogInput,
-  UserProfile,
-} from "../types";
+import type { DailyCheckIn } from "../types";
 import type {
   CycleContextDisplay,
-  DailySummaryDisplay,
-  MacroSummary,
+  DailyActivityEntry,
+  DailyFoodEntry,
   WellnessUser,
 } from "../types/wellness";
+export const DAILY_CALORIE_TARGET = 2000; // legacy reference; live TDEE comes from ProfileProvider
 
-const sampleProfile: UserProfile = {
-  age: 28,
-  sex: "female",
-  heightCm: 165,
-  weightKg: 56,
-  activityLevel: "moderate",
+/** Macro progress targets (placeholder until tied to profile goals). */
+export const macroTargets = {
+  protein: 114,
+  carbs: 250,
+  fat: 75,
 };
 
-const sampleFoodLogs: FoodLogInput[] = [
-  { caloriesPerServing: 520, servings: 1 },
-  { caloriesPerServing: 450, servings: 2 },
+export const macroColors = {
+  protein: "#B86B52",
+  carbs: "#7D9B8A",
+  fat: "#E8D5B0",
+};
+
+/** Default today's food logs (1420 kcal total). */
+export const defaultDailyFoods: DailyFoodEntry[] = [
+  {
+    id: "sample-food-1",
+    name: "Chicken & rice bowl",
+    meal: "Lunch",
+    calories: 520,
+    protein: 42,
+    carbs: 48,
+    fat: 12,
+  },
+  {
+    id: "sample-food-2",
+    name: "Avocado toast",
+    meal: "Snack",
+    calories: 900,
+    protein: 40,
+    carbs: 97,
+    fat: 36,
+  },
 ];
 
-const sampleActivityLogs: ActivityLogInput[] = [
-  { metValue: 5, weightKg: 64, durationMinutes: 60 },
-];
+/** Default today's activity logs (320 kcal burned). */
+export const defaultDailyActivities: DailyActivityEntry[] = [
+    {
+      id: "sample-activity-1",
+      name: "Light walk",
+      durationMinutes: 60,
+      caloriesBurned: 320,
+      intensity: "Moderate",
+    },
+  ];
+
+export function getDefaultDailyFoods(): DailyFoodEntry[] {
+  return defaultDailyFoods.map((entry) => ({ ...entry }));
+}
+
+export function getDefaultDailyActivities(): DailyActivityEntry[] {
+  return defaultDailyActivities.map((entry) => ({ ...entry }));
+}
 
 /** Single default source for today's body check-in (shared by provider + UI). */
 export const defaultDailyCheckIn: DailyCheckIn = {
@@ -54,6 +83,8 @@ export const sampleUser: WellnessUser = {
   focusMessage: "Focus on nourishment",
 };
 
+/** Sample cycle context for dashboard — not yet driven by profile cycle settings. */
+
 export const sampleCycleContext: CycleContextDisplay = {
   phaseLabel: "Luteal phase",
   cycleDayLabel: "Cycle day 18",
@@ -64,31 +95,3 @@ export const sampleCycleContext: CycleContextDisplay = {
 
 export const patternInsightsMessage =
   "Log 7 days to compare mood, nourishment, and cycle context.";
-
-export function getSampleMacros(): MacroSummary[] {
-  return [
-    { label: "Protein", grams: 82, percent: 72, color: "#B86B52" },
-    { label: "Carbs", grams: 145, percent: 58, color: "#7D9B8A" },
-    { label: "Fat", grams: 48, percent: 64, color: "#E8D5B0" },
-  ];
-}
-
-export function getSampleDailySummary(): DailySummaryDisplay {
-  const tdee = calculateTdee(sampleProfile);
-  const summary = calculateDailySummary(
-    sampleFoodLogs,
-    sampleActivityLogs,
-    tdee,
-  );
-
-  return {
-    eaten: summary.totalFoodCalories,
-    burned: summary.totalActivityCalories,
-    net: summary.netCalories,
-    tdee: summary.tdee,
-    remaining: summary.remainingCalories,
-    ringValue: summary.netCalories,
-    ringTarget: summary.tdee,
-    ringPercent: Math.round((summary.netCalories / summary.tdee) * 100),
-  };
-}

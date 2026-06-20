@@ -2,15 +2,43 @@
 
 ## Positioning
 
-A calorie tracker for women that helps connect **food, activity, weight, mood, energy, cravings, and cycle-related patterns** — so daily choices feel easier to understand in context, not judged in isolation.
+A calorie and wellness tracker for women that connects **food, activity, mood, sleep, cravings, weight, and cycle or life-stage patterns** — so daily choices feel easier to understand in context, not judged in isolation.
 
-The app supports awareness and pattern tracking. It does not diagnose, treat, or claim to fix hormonal or medical conditions.
+The app supports awareness and pattern tracking. It does not diagnose, treat, or claim to fix hormonal or medical conditions. Copy should use language like **track patterns** and **support awareness**, and avoid claims such as “fix hormones” or “optimize hormones.”
+
+## Design direction
+
+The product is moving from a dark, gym-style calorie dashboard to a **warmer, mobile-first wellness experience** inspired by calm nourishment apps — not a pixel-perfect clone of any reference.
+
+**Visual tone:** soft, grounded, and feminine without being clinical. The UI should feel like a supportive daily companion, not a performance tracker.
+
+**Palette (guidance):**
+- Warm ivory / off-white page background
+- Soft cream cards with thin beige borders and gentle shadows
+- Muted terracotta or clay as the primary accent (nourishment ring, key numbers)
+- Sage green as a secondary accent (activity, balance)
+- Supporting accents: blush, lavender, pale blue, pale gold — used sparingly for mood, sleep, and cycle context
+- Deep espresso brown for primary text; taupe / warm gray for secondary text
+
+**Typography (no custom font packages in MVP):**
+- Refined system serif stack for greetings, names, and large numbers
+- Clean system sans-serif for labels, cards, and navigation
+
+**Dashboard layout (MVP shell):**
+1. Greeting header with name, date, optional cycle or life-stage label, and a gentle focus message
+2. Main nourishment card — circular calorie progress, eaten vs target, remaining, macro placeholder bars
+3. Wellness snapshot grid — mood, sleep, energy, activity (sample data until logging ships)
+4. Cycle / body insight card — supportive copy with “may notice” language, not medical advice
+5. Today’s check-in card — display sample check-in values (no form yet)
+6. Bottom navigation — Today, Log, Insights, Profile (decorative until routing exists)
+
+**Important:** The warm wellness layer sits on top of the same simple MVP core. Visual richness does not expand scope into medical analytics, AI coaching, or complex cycle forecasting.
 
 ## Goals
 
 Build a simple, reliable calorie-tracking app that helps users log food and activity, view a daily calorie summary, and track progress against their energy needs — all without external paid APIs.
 
-**MVP focus:** A working calorie tracker with food logging, activity logging, user profile, and daily calorie summary. Targets are set from profile data and standard formulas — not auto-adjusted from trends in the first release.
+**MVP focus:** A working calorie tracker with food logging, activity logging, user profile, daily calorie summary, daily body check-in, and optional cycle or life-stage context on a simple warm dashboard. Targets are set from profile data and standard formulas — not auto-adjusted from trends in the first release.
 
 The lean differentiator layer (below) adds lightweight body and cycle context on top of that core — without turning the MVP into a medical or AI product.
 

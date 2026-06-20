@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CheckInProvider } from "../components/providers/CheckInProvider";
+import { AppStateProvider } from "../components/providers/AppStateProvider";
 
 export function Providers({ children }: { children: ReactNode }) {
-  return <CheckInProvider>{children}</CheckInProvider>;
+  return <AppStateProvider>{children}</AppStateProvider>;
 }
