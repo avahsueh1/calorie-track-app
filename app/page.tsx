@@ -1,56 +1,65 @@
 "use client";
 
-import { BottomNav } from "../components/dashboard/BottomNav";
+import { useRef } from "react";
+import { AppShell } from "../components/ui/AppShell";
 import { CycleInsightCard } from "../components/dashboard/CycleInsightCard";
-import { DailySummaryStats } from "../components/dashboard/DailySummaryStats";
 import { DashboardHeader } from "../components/dashboard/DashboardHeader";
+import { HomeLogActions } from "../components/dashboard/HomeLogActions";
 import { NourishmentCard } from "../components/dashboard/NourishmentCard";
 import { PatternInsightsCard } from "../components/dashboard/PatternInsightsCard";
 import { TodayCheckInCard } from "../components/dashboard/TodayCheckInCard";
-import {
-  mainContentStyle,
-  pageOuterStyle,
-  shellStyle,
-} from "../components/dashboard/theme";
+import { groupStackStyle } from "../components/dashboard/theme";
 import {
   useCycleContext,
   useDailyLog,
+  useInsightsData,
   useProfile,
 } from "../components/providers/AppStateProvider";
-import { getProfileFirstName } from "../data/defaultProfile";
-import { patternInsightsMessage } from "../data/sampleDashboard";
+import { getProfileFirstName, getProfileInitial } from "../data/defaultProfile";
 
 export default function HomePage() {
   const { dailySummary, macros } = useDailyLog();
   const { profile, focusMessage } = useProfile();
   const { cycleContext } = useCycleContext();
+  const { patternInsightCards } = useInsightsData();
+  const calorieCardRef = useRef<HTMLElement>(null);
+  const patternMessage =
+    patternInsightCards.find((card) => card.title === "Cycle context")?.message ??
+    "Log 7 days to compare mood, nourishment, and cycle context.";
 
   return (
-    <div style={pageOuterStyle()}>
-      <div style={shellStyle()}>
-        <main style={mainContentStyle()}>
-          <DashboardHeader
-            user={{
-              name: getProfileFirstName(profile.name),
-              focusMessage,
-            }}
-            cycle={cycleContext}
-          />
+    <AppShell
+      mainStyle={{
+        gap: "6px",
+      }}
+    >
+      <DashboardHeader
+        user={{
+          name: getProfileFirstName(profile.name),
+          focusMessage,
+        }}
+        cycle={cycleContext}
+        userInitial={getProfileInitial(profile.name)}
+      />
 
+      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        <section ref={calorieCardRef}>
           <NourishmentCard
             key={`nourishment-${dailySummary.eaten}-${dailySummary.burned}-${dailySummary.net}-${dailySummary.tdee}`}
             summary={dailySummary}
             macros={macros}
           />
+        </section>
 
-          <TodayCheckInCard />
-          <DailySummaryStats summary={dailySummary} />
+        <HomeLogActions calorieCardRef={calorieCardRef} />
+
+        <TodayCheckInCard />
+
+        <div style={groupStackStyle()}>
           <CycleInsightCard cycle={cycleContext} />
-          <PatternInsightsCard message={patternInsightsMessage} />
-        </main>
-
-        <BottomNav />
+          <PatternInsightsCard message={patternMessage} />
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

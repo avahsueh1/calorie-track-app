@@ -12,12 +12,14 @@ export const macroTargets = {
   protein: 114,
   carbs: 250,
   fat: 75,
+  fiber: 25,
 };
 
 export const macroColors = {
   protein: "#B86B52",
   carbs: "#7D9B8A",
   fat: "#E8D5B0",
+  fiber: "#4D8B7A",
 };
 
 /** Default today's food logs (1420 kcal total). */
@@ -87,11 +89,9 @@ export const sampleUser: WellnessUser = {
 
 export const sampleCycleContext: CycleContextDisplay = {
   phaseLabel: "Luteal phase",
+  cycleDay: 18,
   cycleDayLabel: "Cycle day 18",
   insightTitle: "Luteal phase insight",
   insightMessage:
     "Energy and hunger can trend higher here. Use this as awareness, not a prescription.",
 };
-
-export const patternInsightsMessage =
-  "Log 7 days to compare mood, nourishment, and cycle context.";

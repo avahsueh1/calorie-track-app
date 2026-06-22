@@ -1,254 +1,82 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { getSampleBodyPatternEntry } from "../../data/sampleInsights";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  resolveBodyPatternCalendarDay,
+  sampleBodyPatternCalendarCopy,
+} from "../../data/sampleInsights";
 import type { BodyPatternCalendarDay } from "../../types/wellness";
 import { BodyPatternDayHoverPreview } from "./BodyPatternDayHoverPreview";
 import {
+  buildMonthGrid,
+  buildPhaseBandSegments,
   CALENDAR_COLORS,
   formatFullDate,
+  formatMonthTitle,
+  getPhaseKind,
   getTodayDateKey,
-  INSIGHTS_SELECTED_DATE_KEY,
-  PHASE_COLORS,
-  phaseBackgroundColor,
-  toDateKey,
+  insightsDayPath,
+  phaseAccent,
+  phaseTodayOutline,
+  PHASE_THEME,
+  type PhaseBandSegment,
 } from "./bodyPatternCalendarUtils";
-import {
-  insightsCardStyle,
-  insightsColors,
-  insightsSans,
-  insightsSectionTitleStyle,
-  insightsSubtitleStyle,
-} from "./theme";
-
+import { PhaseCellIcon } from "./PhaseCellIcon";
+import { insightsLayout, insightsSans } from "./theme";
 interface BodyPatternCalendarProps {
   entriesByDate: Record<string, BodyPatternCalendarDay>;
   initialYear: number;
   initialMonth: number;
-  initialSelectedDate: string;
-  subtitle: string;
-  tapHint: string;
+}
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const LEGEND_PHASES = ["menstrual", "follicular", "ovulatory", "luteal"] as const;
+
+function calendarSizes(compact: boolean) {
+  const gridGapPx = compact ? 8 : 12;
+  const weekRowSpacing = compact ? 18 : 20;
+
+  return compact
+    ? {
+        cellHeight: 46,
+        pillHeight: 42,
+        numberSize: "1rem",
+        iconSize: 13,
+        stackGap: 2,
+        todaySize: 48,
+        weekRowMargin: weekRowSpacing - gridGapPx,
+      }
+    : {
+        cellHeight: 48,
+        pillHeight: 44,
+        numberSize: "1rem",
+        iconSize: 13,
+        stackGap: 2,
+        todaySize: 50,
+        weekRowMargin: weekRowSpacing - gridGapPx,
+      };
 }
 
-const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-interface MonthCell {
-  dateKey: string;
-  dayOfMonth: number;
-}
-
-function formatMonthTitle(year: number, month: number): string {
-  return new Date(year, month, 1).toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function buildMonthGrid(year: number, month: number): (MonthCell | null)[] {
-  const firstWeekday = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells: (MonthCell | null)[] = [];
-
-  for (let index = 0; index < firstWeekday; index += 1) {
-    cells.push(null);
-  }
-
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    cells.push({
-      dateKey: toDateKey(year, month, day),
-      dayOfMonth: day,
-    });
-  }
-
-  return cells;
-}
-
-function navButtonStyle() {
-  return {
-    width: "32px",
-    height: "32px",
-    borderRadius: "999px",
-    border: `1px solid ${CALENDAR_COLORS.border}`,
-    backgroundColor: CALENDAR_COLORS.cell,
-    color: CALENDAR_COLORS.text,
-    fontSize: "1rem",
-    lineHeight: 1,
-    cursor: "pointer",
-    fontFamily: insightsSans,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  };
-}
-
-function DateCell({
-  dayOfMonth,
-  entry,
-  selected,
-  isToday,
-  canHover,
-  showHoverPreview,
-  onHoverStart,
-  onHoverEnd,
-  onSelect,
-}: {
-  dayOfMonth: number;
-  entry: BodyPatternCalendarDay;
-  selected: boolean;
-  isToday: boolean;
-  canHover: boolean;
-  showHoverPreview: boolean;
-  onHoverStart: () => void;
-  onHoverEnd: () => void;
-  onSelect: () => void;
-}) {
-  const phaseBg = phaseBackgroundColor(entry.phase);
-
-  return (
-    <div
-      style={{ position: "relative", minWidth: 0 }}
-      onMouseEnter={canHover ? onHoverStart : undefined}
-      onMouseLeave={canHover ? onHoverEnd : undefined}
-    >
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-pressed={selected}
-        aria-label={`${formatFullDate(entry.dateKey)}, cycle day ${entry.cycleDay}, ${entry.phase} phase`}
-        aria-current={isToday ? "date" : undefined}
-        style={{
-          position: "relative",
-          minWidth: 0,
-          width: "100%",
-          aspectRatio: "1 / 1",
-          padding: "4px",
-          border: selected
-            ? `2px solid ${CALENDAR_COLORS.selectedBorder}`
-            : `1px solid ${CALENDAR_COLORS.border}`,
-          borderRadius: "12px",
-          backgroundColor: phaseBg,
-          boxShadow: selected
-            ? "0 0 0 3px rgba(185, 118, 99, 0.12)"
-            : "none",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: insightsSans,
-          boxSizing: "border-box",
-        }}
-      >
-        {isToday ? (
-          <span
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              top: "5px",
-              right: "5px",
-              width: "5px",
-              height: "5px",
-              borderRadius: "50%",
-              backgroundColor: CALENDAR_COLORS.sage,
-            }}
-          />
-        ) : null}
-        <span
-          style={{
-            fontSize: "0.72rem",
-            fontWeight: selected || isToday ? 700 : 600,
-            color: CALENDAR_COLORS.text,
-            lineHeight: 1,
-          }}
-        >
-          {dayOfMonth}
-        </span>
-      </button>
-
-      {showHoverPreview ? (
-        <div
-          style={{
-            position: "absolute",
-            left: "50%",
-            bottom: "calc(100% + 6px)",
-            transform: "translateX(-50%)",
-            zIndex: 20,
-          }}
-        >
-          <BodyPatternDayHoverPreview entry={entry} />
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function PhaseLegend() {
-  const items = [
-    { label: "Menstrual", color: PHASE_COLORS.menstrual },
-    { label: "Follicular", color: PHASE_COLORS.follicular },
-    { label: "Ovulatory", color: PHASE_COLORS.ovulatory },
-    { label: "Luteal", color: PHASE_COLORS.luteal },
-  ];
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "8px 12px",
-        marginTop: "12px",
-        fontSize: "0.62rem",
-        color: CALENDAR_COLORS.secondary,
-        fontFamily: insightsSans,
-      }}
-    >
-      {items.map((item) => (
-        <span
-          key={item.label}
-          style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
-        >
-          <span
-            style={{
-              width: "12px",
-              height: "12px",
-              borderRadius: "4px",
-              backgroundColor: item.color,
-              border: `1px solid ${CALENDAR_COLORS.border}`,
-              flexShrink: 0,
-            }}
-          />
-          {item.label}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-export function BodyPatternCalendar({
-  entriesByDate,
-  initialYear,
-  initialMonth,
-  initialSelectedDate,
-  subtitle,
-  tapHint,
-}: BodyPatternCalendarProps) {
-  const router = useRouter();
-  const [currentMonth, setCurrentMonth] = useState({
-    year: initialYear,
-    month: initialMonth,
-  });
-  const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
-  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
-  const [canHover, setCanHover] = useState(false);
-  const todayDateKey = getTodayDateKey();
+function useCompactCells(containerRef: React.RefObject<HTMLElement | null>) {
+  const [compact, setCompact] = useState(true);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem(INSIGHTS_SELECTED_DATE_KEY);
-    if (stored) {
-      setSelectedDate(stored);
-    }
-  }, []);
+    const node = containerRef.current;
+    if (!node) return;
+
+    const update = () => setCompact(node.clientWidth < 520);
+    update();
+
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [containerRef]);
+
+  return compact;
+}
+
+function useCanHover() {
+  const [canHover, setCanHover] = useState(false);
 
   useEffect(() => {
     const media = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -258,73 +86,332 @@ export function BodyPatternCalendar({
     return () => media.removeEventListener("change", update);
   }, []);
 
+  return canHover;
+}
+
+function PhaseBands({
+  segments,
+  rowIndex,
+  gridGap,
+  pillHeight,
+}: {
+  segments: PhaseBandSegment[];
+  rowIndex: number;
+  gridGap: string;
+  pillHeight: number;
+}) {
+  const rowSegments = segments.filter((segment) => segment.rowIndex === rowIndex);
+  if (rowSegments.length === 0) return null;
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        inset: 0,
+        display: "grid",
+        gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+        gap: gridGap,
+        pointerEvents: "none",
+        zIndex: 0,
+      }}
+    >
+      {rowSegments.map((segment) => (
+        <div
+          key={`${rowIndex}-${segment.colStart}-${segment.colEnd}-${segment.phase}`}
+          style={{
+            gridColumn: `${segment.colStart + 1} / ${segment.colEnd + 2}`,
+            alignSelf: "center",
+            height: `${pillHeight}px`,
+            backgroundColor: PHASE_THEME[segment.phase].bg,
+            borderRadius: "999px",
+            pointerEvents: "none",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function DateCell({
+  dayOfMonth,
+  dateKey,
+  phase,
+  entry,
+  isToday,
+  compact,
+  canHover,
+  showHoverPreview,
+  onHoverStart,
+  onHoverEnd,
+}: {
+  dayOfMonth: number;
+  dateKey: string;
+  phase: string;
+  entry: BodyPatternCalendarDay | null;
+  isToday: boolean;
+  compact: boolean;
+  canHover: boolean;
+  showHoverPreview: boolean;
+  onHoverStart: () => void;
+  onHoverEnd: () => void;
+}) {
+  const [lifted, setLifted] = useState(false);
+  const kind = getPhaseKind(phase);
+  const accent = phaseAccent(phase);
+  const todayOutline = isToday ? phaseTodayOutline(phase) : undefined;
+  const sizes = calendarSizes(compact);
+
+  const cellBorder = todayOutline
+    ? `2px solid ${todayOutline}`
+    : "1px solid transparent";
+
+  const cellShadow = lifted ? "0 2px 6px rgba(60, 43, 36, 0.04)" : "none";
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        minWidth: 0,
+        width: "100%",
+        height: `${sizes.cellHeight}px`,
+        zIndex: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Link
+        href={insightsDayPath(dateKey)}
+        onMouseEnter={() => {
+          setLifted(true);
+          if (canHover) onHoverStart();
+        }}
+        onMouseLeave={() => {
+          setLifted(false);
+          if (canHover) onHoverEnd();
+        }}
+        aria-current={isToday ? "date" : undefined}
+        aria-label={`${formatFullDate(dateKey)}, ${phase} phase`}
+        style={{
+          position: "relative",
+          zIndex: 1,
+          width: isToday ? `${sizes.todaySize}px` : "100%",
+          height: isToday ? `${sizes.todaySize}px` : "100%",
+          minHeight: isToday ? undefined : `${sizes.cellHeight}px`,
+          padding: isToday ? "0" : "0 2px",
+          border: cellBorder,
+          borderRadius: isToday ? "50%" : "20px",
+          backgroundColor: "transparent",
+          boxShadow: cellShadow,
+          flexShrink: 0,
+          transform: lifted ? "translateY(-1px)" : "none",
+          transition: "box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease",
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: `${sizes.stackGap}px`,
+          boxSizing: "border-box",
+          fontFamily: insightsSans,
+          overflow: "visible",
+          textDecoration: "none",
+        }}
+      >
+        <span
+          style={{
+            fontSize: sizes.numberSize,
+            fontWeight: 600,
+            color: CALENDAR_COLORS.text,
+            lineHeight: 1,
+          }}
+        >
+          {dayOfMonth}
+        </span>
+        {kind !== "none" ? (
+          <PhaseCellIcon
+            kind={kind}
+            color={accent}
+            size={sizes.iconSize}
+            opacity={0.68}
+          />
+        ) : null}
+      </Link>
+      {showHoverPreview && entry ? (
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            bottom: "calc(100% + 8px)",
+            transform: "translateX(-50%)",
+            zIndex: 30,
+          }}
+        >
+          <BodyPatternDayHoverPreview entry={entry} />
+        </div>
+      ) : null}    </div>
+  );
+}
+
+function PhaseLegend() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "22px",
+        marginTop: "16px",
+        fontFamily: insightsSans,
+      }}
+    >
+      {LEGEND_PHASES.map((kind) => {
+        const theme = PHASE_THEME[kind];
+        return (
+          <span
+            key={kind}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "1.0625rem",
+              color: CALENDAR_COLORS.secondary,
+            }}
+          >
+            <span
+              style={{
+                width: "24px",
+                height: "24px",
+                borderRadius: "6px",
+                backgroundColor: theme.bg,
+                border: `1px solid rgba(230, 215, 203, 0.35)`,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <PhaseCellIcon kind={kind} size={16} opacity={0.7} />
+            </span>
+            {theme.legendLabel}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+export function BodyPatternCalendar({
+  entriesByDate,
+  initialYear,
+  initialMonth,
+}: BodyPatternCalendarProps) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const compact = useCompactCells(sectionRef);
+  const canHover = useCanHover();
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
+  const [currentMonth, setCurrentMonth] = useState({
+    year: initialYear,
+    month: initialMonth,
+  });
+  const todayDateKey = getTodayDateKey();
+  const gridGap = compact ? "8px" : "12px";
+  const sizes = calendarSizes(compact);
   const monthCells = useMemo(
     () => buildMonthGrid(currentMonth.year, currentMonth.month),
     [currentMonth.year, currentMonth.month],
   );
 
-  function resolveEntry(dateKey: string): BodyPatternCalendarDay {
-    return entriesByDate[dateKey] ?? getSampleBodyPatternEntry(dateKey);
-  }
+  const weekRows = useMemo(() => {
+    const rows: (typeof monthCells)[] = [];
+    for (let index = 0; index < monthCells.length; index += 7) {
+      rows.push(monthCells.slice(index, index + 7));
+    }
+    return rows;
+  }, [monthCells]);
 
-  function goToPreviousMonth() {
-    setCurrentMonth((current) => {
-      const date = new Date(current.year, current.month - 1, 1);
-      return { year: date.getFullYear(), month: date.getMonth() };
-    });
-  }
+  const bandSegments = useMemo(
+    () =>
+      buildPhaseBandSegments(monthCells, (dateKey) =>
+        resolveBodyPatternCalendarDay(dateKey, entriesByDate).phase,
+      ),
+    [monthCells, entriesByDate],
+  );
 
-  function goToNextMonth() {
-    setCurrentMonth((current) => {
-      const date = new Date(current.year, current.month + 1, 1);
-      return { year: date.getFullYear(), month: date.getMonth() };
-    });
-  }
-
-  function handleDateSelect(dateKey: string) {
-    setSelectedDate(dateKey);
-    sessionStorage.setItem(INSIGHTS_SELECTED_DATE_KEY, dateKey);
-    router.push(`/insights/${dateKey}`);
+  function resolveDay(dateKey: string) {
+    return resolveBodyPatternCalendarDay(dateKey, entriesByDate);
   }
 
   return (
     <section
+      ref={sectionRef}
       style={{
-        ...insightsCardStyle(),
         width: "100%",
-        maxWidth: "100%",
+        maxWidth: insightsLayout.shellMaxWidth,
+        margin: "0 auto",
+        padding: compact ? "18px" : "24px",
+        borderRadius: "24px",
+        backgroundColor: CALENDAR_COLORS.card,
+        border: `1px solid ${CALENDAR_COLORS.border}`,
+        boxShadow: "0 2px 20px rgba(60, 43, 36, 0.05)",
         boxSizing: "border-box",
         overflow: "visible",
       }}
     >
-      <h2 style={insightsSectionTitleStyle()}>Cycle Pattern Calendar</h2>
-      <p style={insightsSubtitleStyle()}>{subtitle}</p>
-      <p
-        style={{
-          margin: "8px 0 0",
-          fontSize: "0.72rem",
-          lineHeight: 1.4,
-          color: insightsColors.textSecondary,
-          fontFamily: insightsSans,
-        }}
-      >
-        {tapHint}
-      </p>
+      <header>
+        <h2
+          style={{
+            margin: 0,
+            fontSize: "1.05rem",
+            fontWeight: 600,
+            color: CALENDAR_COLORS.text,
+            fontFamily: insightsSans,
+          }}
+        >
+          Cycle Pattern Calendar
+        </h2>
+        <p
+          style={{
+            margin: "6px 0 0",
+            fontSize: "0.82rem",
+            lineHeight: 1.45,
+            color: CALENDAR_COLORS.secondary,
+            fontFamily: insightsSans,
+          }}
+        >
+          {sampleBodyPatternCalendarCopy.subtitle} {sampleBodyPatternCalendarCopy.tapHint}        </p>
+      </header>
 
       <div
         style={{
-          marginTop: "16px",
+          marginTop: "20px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: "10px",
+          gap: "12px",
         }}
       >
         <button
           type="button"
-          onClick={goToPreviousMonth}
-          style={navButtonStyle()}
           aria-label="Previous month"
+          onClick={() =>
+            setCurrentMonth((c) => {
+              const d = new Date(c.year, c.month - 1, 1);
+              return { year: d.getFullYear(), month: d.getMonth() };
+            })
+          }
+          style={{
+            width: "36px",
+            height: "36px",
+            borderRadius: "999px",
+            border: `1px solid ${CALENDAR_COLORS.border}`,
+            backgroundColor: CALENDAR_COLORS.navBg,
+            color: CALENDAR_COLORS.text,
+            fontSize: "1.1rem",
+            cursor: "pointer",
+            fontFamily: insightsSans,
+            flexShrink: 0,
+          }}
         >
           ‹
         </button>
@@ -333,7 +420,7 @@ export function BodyPatternCalendar({
             margin: 0,
             flex: 1,
             textAlign: "center",
-            fontSize: "0.95rem",
+            fontSize: "1rem",
             fontWeight: 600,
             color: CALENDAR_COLORS.text,
             fontFamily: insightsSans,
@@ -343,9 +430,25 @@ export function BodyPatternCalendar({
         </p>
         <button
           type="button"
-          onClick={goToNextMonth}
-          style={navButtonStyle()}
           aria-label="Next month"
+          onClick={() =>
+            setCurrentMonth((c) => {
+              const d = new Date(c.year, c.month + 1, 1);
+              return { year: d.getFullYear(), month: d.getMonth() };
+            })
+          }
+          style={{
+            width: "36px",
+            height: "36px",
+            borderRadius: "999px",
+            border: `1px solid ${CALENDAR_COLORS.border}`,
+            backgroundColor: CALENDAR_COLORS.navBg,
+            color: CALENDAR_COLORS.text,
+            fontSize: "1.1rem",
+            cursor: "pointer",
+            fontFamily: insightsSans,
+            flexShrink: 0,
+          }}
         >
           ›
         </button>
@@ -353,49 +456,83 @@ export function BodyPatternCalendar({
 
       <div
         style={{
-          marginTop: "12px",
+          marginTop: "16px",
           display: "grid",
           gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-          gap: "4px",
-          position: "relative",
-          zIndex: 1,
+          gap: gridGap,
         }}
       >
-        {WEEKDAY_LABELS.map((label) => (
+        {WEEKDAYS.map((label) => (
           <div
             key={label}
             style={{
               textAlign: "center",
-              fontSize: "0.62rem",
+              fontSize: "0.68rem",
               fontWeight: 600,
               letterSpacing: "0.04em",
               color: CALENDAR_COLORS.secondary,
               fontFamily: insightsSans,
-              padding: "2px 0 4px",
+              paddingBottom: "4px",
             }}
           >
             {label}
           </div>
         ))}
 
-        {monthCells.map((cell, index) =>
-          cell ? (
-            <DateCell
-              key={cell.dateKey}
-              dayOfMonth={cell.dayOfMonth}
-              entry={resolveEntry(cell.dateKey)}
-              selected={selectedDate === cell.dateKey}
-              isToday={cell.dateKey === todayDateKey}
-              canHover={canHover}
-              showHoverPreview={canHover && hoveredDate === cell.dateKey}
-              onHoverStart={() => setHoveredDate(cell.dateKey)}
-              onHoverEnd={() => setHoveredDate(null)}
-              onSelect={() => handleDateSelect(cell.dateKey)}
+        {weekRows.map((week, rowIndex) => (
+          <div
+            key={`week-${rowIndex}`}
+            style={{
+              gridColumn: "1 / -1",
+              position: "relative",
+              marginBottom: rowIndex < weekRows.length - 1 ? `${sizes.weekRowMargin}px` : 0,
+            }}
+          >
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
+                display: "grid",
+                gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+                gap: gridGap,
+                minHeight: `${sizes.cellHeight}px`,
+              }}
+            >
+              {week.map((cell, colIndex) => {
+                if (!cell) {
+                  return (
+                    <div key={`blank-${rowIndex}-${colIndex}`} aria-hidden="true" />
+                  );
+                }
+
+                const day = resolveDay(cell.dateKey);
+
+                return (
+                  <DateCell
+                    key={cell.dateKey}
+                    dayOfMonth={cell.dayOfMonth}
+                    dateKey={day.dateKey}
+                    phase={day.phase}
+                    entry={day.entry}
+                    isToday={cell.dateKey === todayDateKey}
+                    compact={compact}
+                    canHover={canHover}
+                    showHoverPreview={
+                      canHover && hoveredDate === cell.dateKey && day.entry !== null
+                    }
+                    onHoverStart={() => setHoveredDate(cell.dateKey)}
+                    onHoverEnd={() => setHoveredDate(null)}
+                  />
+                );
+              })}            </div>
+            <PhaseBands
+              segments={bandSegments}
+              rowIndex={rowIndex}
+              gridGap={gridGap}
+              pillHeight={sizes.pillHeight}
             />
-          ) : (
-            <div key={`blank-${index}`} aria-hidden="true" />
-          ),
-        )}
+          </div>
+        ))}
       </div>
 
       <PhaseLegend />

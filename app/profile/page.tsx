@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BottomNav } from "../../components/dashboard/BottomNav";
+import { AppShell } from "../../components/ui/AppShell";
 import { BodyEnergyCard } from "../../components/profile/BodyEnergyCard";
 import { CycleLifeStageCard } from "../../components/profile/CycleLifeStageCard";
 import { GoalsCard } from "../../components/profile/GoalsCard";
@@ -10,13 +10,11 @@ import { ProfileHeader } from "../../components/profile/ProfileHeader";
 import { ProfileIdentityCard } from "../../components/profile/ProfileIdentityCard";
 import { RecentWeightSummary } from "../../components/profile/RecentWeightSummary";
 import { useProfile, useWeightLogs } from "../../components/providers/AppStateProvider";
+import { getProfileInitial } from "../../data/defaultProfile";
 import { profilePrimaryButtonStyle } from "../../components/profile/shared";
 import {
   profileColors,
-  profileMainStyle,
-  profilePageOuterStyle,
   profileSans,
-  profileShellStyle,
 } from "../../components/profile/theme";
 import { feetInchesToCm, kgToLb, lbToKg } from "../../lib/profileBody";
 import type { ActivityLevel, DailyTargetMode, Sex } from "../../types";
@@ -53,17 +51,10 @@ export default function ProfilePage() {
     updateProfile({ weightKg: lbToKg(weightLb) });
   }
 
-  const initials = profile.name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = getProfileInitial(profile.name);
 
   return (
-    <div style={profilePageOuterStyle()}>
-      <div style={profileShellStyle()}>
-        <main style={profileMainStyle()}>
+    <AppShell mainStyle={{ gap: "14px", paddingBottom: "12px" }}>
           <ProfileHeader />
 
           {editingIdentity ? (
@@ -235,10 +226,6 @@ export default function ProfilePage() {
               </p>
             )}
           </div>
-        </main>
-
-        <BottomNav />
-      </div>
-    </div>
+    </AppShell>
   );
 }

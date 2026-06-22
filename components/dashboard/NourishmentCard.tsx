@@ -1,9 +1,10 @@
 "use client";
 
 import type { DailySummaryDisplay, MacroSummary } from "../../types/wellness";
-import { MacroBars } from "./MacroBars";
+import { AppCard } from "../ui/AppCard";
+import { CalorieStatGrid, MacroStatGrid } from "../ui/EnergyMacroStatGrids";
 import { NourishmentRing } from "./NourishmentRing";
-import { cardStyle, layout } from "./theme";
+import { colors, formatNumber, sans } from "./theme";
 
 interface NourishmentCardProps {
   summary: DailySummaryDisplay;
@@ -12,14 +13,62 @@ interface NourishmentCardProps {
 
 export function NourishmentCard({ summary, macros }: NourishmentCardProps) {
   return (
-    <section
+    <AppCard
+      padding="23px 20px 16px"
       style={{
-        ...cardStyle(),
-        padding: `${layout.cardPadding} 16px 20px`,
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      <NourishmentRing summary={summary} />
-      <MacroBars macros={macros} />
-    </section>
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <header style={{ marginBottom: "20px" }}>
+          <h2
+            style={{
+              margin: 0,
+              fontFamily: sans,
+              fontSize: "1.125rem",
+              fontWeight: 600,
+              color: colors.text,
+              letterSpacing: "-0.01em",
+              lineHeight: 1.25,
+            }}
+          >
+            Today&apos;s energy
+          </h2>
+          <p
+            style={{
+              margin: "6px 0 0",
+              fontFamily: sans,
+              fontSize: "0.875rem",
+              fontWeight: 400,
+              color: colors.muted,
+              lineHeight: 1.35,
+            }}
+          >
+            {formatNumber(summary.remaining)} kcal left for today
+          </p>
+        </header>
+
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <NourishmentRing summary={summary} />
+        </div>
+
+        <div style={{ marginTop: "10px" }}>
+          <CalorieStatGrid
+            tileSize="compact"
+            summary={{
+              eaten: summary.eaten,
+              burned: summary.burned,
+              target: summary.tdee,
+              remaining: summary.remaining,
+            }}
+          />
+        </div>
+
+        <div style={{ marginTop: "16px" }}>
+          <MacroStatGrid macros={macros} />
+        </div>
+      </div>
+    </AppCard>
   );
 }

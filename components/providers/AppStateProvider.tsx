@@ -107,13 +107,8 @@ function getTodayCheckIn(
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState>(() => {
-    if (typeof window === "undefined") {
-      return getDefaultAppState();
-    }
-    return loadAppStateFromStorage();
-  });
-  const [hydrated, setHydrated] = useState(() => typeof window !== "undefined");
+  const [state, setState] = useState<AppState>(getDefaultAppState);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setState(loadAppStateFromStorage());

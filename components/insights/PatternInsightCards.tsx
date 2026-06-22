@@ -1,6 +1,6 @@
 import type { PatternInsightCardData } from "../../types/wellness";
+import { AppCard } from "../ui/AppCard";
 import {
-  insightsCardStyle,
   insightsColors,
   insightsSans,
   insightsSectionTitleStyle,
@@ -18,20 +18,18 @@ interface PatternInsightCardsProps {
 
 export function PatternInsightCards({ cards }: PatternInsightCardsProps) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       {cards.map((card) => (
-        <article
+        <AppCard
           key={card.title}
-          style={{
-            ...insightsCardStyle(),
-            backgroundColor: accentBackground[card.accent],
-          }}
+          shadow
+          style={{ backgroundColor: accentBackground[card.accent] }}
         >
           <h3
             style={{
               ...insightsSectionTitleStyle(),
               fontSize: "0.85rem",
-              marginBottom: "8px",
+              marginBottom: "6px",
             }}
           >
             {card.title}
@@ -47,7 +45,7 @@ export function PatternInsightCards({ cards }: PatternInsightCardsProps) {
           >
             {card.message}
           </p>
-        </article>
+        </AppCard>
       ))}
     </div>
   );

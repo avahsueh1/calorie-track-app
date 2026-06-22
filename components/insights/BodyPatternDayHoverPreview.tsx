@@ -6,6 +6,7 @@ import {
   formatFullDate,
   formatKcal,
   moodLabel,
+  resolveDayEnergyStats,
 } from "./bodyPatternCalendarUtils";
 
 interface BodyPatternDayHoverPreviewProps {
@@ -35,12 +36,14 @@ function PreviewRow({ label, value }: { label: string; value: string }) {
 export function BodyPatternDayHoverPreview({
   entry,
 }: BodyPatternDayHoverPreviewProps) {
+  const stats = resolveDayEnergyStats(entry);
+
   return (
     <div
       role="tooltip"
       style={{
         width: "max-content",
-        maxWidth: "210px",
+        maxWidth: "220px",
         padding: "10px 12px",
         borderRadius: "14px",
         backgroundColor: CALENDAR_COLORS.card,
@@ -72,14 +75,9 @@ export function BodyPatternDayHoverPreview({
         Cycle day {entry.cycleDay} · {entry.phase}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <PreviewRow label="Net calories" value={`${formatKcal(stats.net)} kcal`} />
         <PreviewRow label="Mood" value={moodLabel(entry)} />
         <PreviewRow label="Energy" value={energyLabel(entry)} />
-        {entry.netCalories !== undefined ? (
-          <PreviewRow
-            label="Net calories"
-            value={`${formatKcal(entry.netCalories)} kcal`}
-          />
-        ) : null}
       </div>
     </div>
   );

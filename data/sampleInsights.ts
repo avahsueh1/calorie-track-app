@@ -12,6 +12,7 @@ export const sampleWeeklyNetCopy = {
     "Daily changes are normal. Look for weekly patterns, not perfect days.",
 };
 
+/** Cycle settings for sample month data — mirrors defaultAppProfile cycle fields. */
 const SAMPLE_CYCLE = {
   lastPeriodStart: "2026-05-28",
   cycleLength: 28,
@@ -45,6 +46,15 @@ function getPhase(cycleDay: number): string {
   return "Luteal";
 }
 
+function deriveSampleMacros(eaten: number) {
+  return {
+    protein: Math.max(0, Math.round((eaten * 0.28) / 4)),
+    carbs: Math.max(0, Math.round((eaten * 0.42) / 4)),
+    fat: Math.max(0, Math.round((eaten * 0.3) / 9)),
+    fiber: Math.max(0, Math.round(eaten / 120)),
+  };
+}
+
 function buildSampleEntry(
   dateKey: string,
   partial: Omit<BodyPatternCalendarDay, "dateKey" | "cycleDay" | "phase">,
@@ -54,6 +64,7 @@ function buildSampleEntry(
   const net = partial.netCalories ?? 1500;
   const eaten = partial.eaten ?? net + burned;
   const targetCalories = partial.targetCalories ?? 2000;
+  const macros = deriveSampleMacros(eaten);
 
   return {
     dateKey,
@@ -64,6 +75,12 @@ function buildSampleEntry(
     burned,
     targetCalories,
     netCalories: net,
+    protein: partial.protein ?? macros.protein,
+    carbs: partial.carbs ?? macros.carbs,
+    fat: partial.fat ?? macros.fat,
+    fiber: partial.fiber ?? macros.fiber,
+    bloating: partial.bloating ?? "none",
+    soreness: partial.soreness ?? "none",
   };
 }
 
@@ -120,6 +137,14 @@ export const sampleBodyPatternMonthEntries: Record<string, BodyPatternCalendarDa
         sleepQuality: 3,
         stress: 2,
         netCalories: 1680,
+        activities: [
+          {
+            name: "Morning yoga",
+            durationMinutes: 25,
+            calories: 95,
+            intensity: "Gentle",
+          },
+        ],
       }),
       buildSampleEntry("2026-06-10", {
         checkInCompleted: true,
@@ -130,6 +155,25 @@ export const sampleBodyPatternMonthEntries: Record<string, BodyPatternCalendarDa
         sleepQuality: 4,
         stress: 3,
         netCalories: 1720,
+        activities: [
+          {
+            name: "Strength training",
+            durationMinutes: 45,
+            calories: 210,
+            intensity: "Moderate",
+          },
+          {
+            name: "Evening stretch",
+            durationMinutes: 12,
+            calories: 35,
+            intensity: "Gentle",
+          },
+        ],
+        weight: {
+          value: "139.2",
+          unit: "lb",
+          note: "After workout",
+        },
       }),
       buildSampleEntry("2026-06-12", {
         checkInCompleted: true,
@@ -150,6 +194,11 @@ export const sampleBodyPatternMonthEntries: Record<string, BodyPatternCalendarDa
         sleepQuality: 2,
         stress: 4,
         netCalories: 1580,
+        weight: {
+          value: "138.8",
+          unit: "lb",
+          note: "Morning check",
+        },
       }),
       buildSampleEntry("2026-06-15", {
         checkInCompleted: true,
@@ -180,6 +229,23 @@ export const sampleBodyPatternMonthEntries: Record<string, BodyPatternCalendarDa
         sleepQuality: 4,
         stress: 2,
         netCalories: 1100,
+        eaten: 1400,
+        burned: 300,
+        targetCalories: 2000,
+        activities: [
+          {
+            name: "Neighborhood walk",
+            durationMinutes: 32,
+            calories: 145,
+            intensity: "Gentle",
+          },
+        ],
+        weight: {
+          value: "138.4",
+          unit: "lb",
+          note: "Morning check",
+        },
+        notes: "",
       }),
       buildSampleEntry("2026-06-19", {
         checkInCompleted: true,
@@ -193,6 +259,18 @@ export const sampleBodyPatternMonthEntries: Record<string, BodyPatternCalendarDa
         eaten: 1650,
         burned: 320,
         targetCalories: 2000,
+        activities: [
+          {
+            name: "Bike ride",
+            durationMinutes: 40,
+            calories: 280,
+            intensity: "Moderate",
+          },
+        ],
+        weight: {
+          value: "138.6",
+          unit: "lb",
+        },
       }),
       buildSampleEntry("2026-06-22", {
         checkInCompleted: true,
@@ -227,30 +305,34 @@ export const sampleBodyPatternMonthEntries: Record<string, BodyPatternCalendarDa
     ].map((entry) => [entry.dateKey, entry]),
   );
 
-export function getSampleBodyPatternEntry(dateKey: string): BodyPatternCalendarDay {
-  return (
-    sampleBodyPatternMonthEntries[dateKey] ??
-    buildSampleEntry(dateKey, {
-      checkInCompleted: false,
-      mood: 3,
-      energy: 3,
-      hunger: 3,
-      cravings: "none",
-      sleepQuality: 3,
-      stress: 3,
-    })
-  );
+export interface BodyPatternCalendarDayView {
+  dateKey: string;
+  cycleDay: number;
+  phase: string;
+  entry: BodyPatternCalendarDay | null;
+}
+
+export function resolveBodyPatternCalendarDay(
+  dateKey: string,
+  entriesByDate: Record<string, BodyPatternCalendarDay> = sampleBodyPatternMonthEntries,
+): BodyPatternCalendarDayView {
+  const cycleDay = getCycleDay(dateKey);
+  return {
+    dateKey,
+    cycleDay,
+    phase: getPhase(cycleDay),
+    entry: entriesByDate[dateKey] ?? null,
+  };
 }
 
 export const sampleBodyPatternCalendarDefaults = {
   initialYear: 2026,
   initialMonth: 5,
-  initialSelectedDate: "2026-06-17",
 };
 
 export const sampleBodyPatternCalendarCopy = {
   subtitle: "See how your check-ins line up with your cycle.",
-  tapHint: "Hover a date for a quick preview. Tap to open the full day snapshot.",
+  tapHint: "Tap a date to view day details.",
 };
 
 export const sampleBodyPatterns: BodyPatternMetric[] = [

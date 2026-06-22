@@ -1,12 +1,13 @@
-import { colors, labelStyle, sans } from "../../lib/theme";
+import { colors, labelStyle, layout, sans } from "../../lib/theme";
 
-export function fieldLabel(text: string) {
+export function fieldLabel() {
   return { ...labelStyle(), marginBottom: "6px", display: "block" as const };
 }
 
 export const inputStyle = {
   width: "100%",
   boxSizing: "border-box" as const,
+  minHeight: layout.touchMinHeight,
   padding: "10px 12px",
   borderRadius: "12px",
   border: `1px solid ${colors.border}`,
@@ -32,6 +33,7 @@ export const textareaStyle = {
 export function primaryButtonStyle() {
   return {
     width: "100%",
+    minHeight: layout.buttonMinHeight,
     padding: "11px 16px",
     borderRadius: "999px",
     border: `1px solid ${colors.terracotta}`,
@@ -47,6 +49,7 @@ export function primaryButtonStyle() {
 export function secondaryButtonStyle() {
   return {
     width: "100%",
+    minHeight: layout.buttonMinHeight,
     padding: "11px 16px",
     borderRadius: "999px",
     border: `1px solid ${colors.border}`,
@@ -59,38 +62,11 @@ export function secondaryButtonStyle() {
   };
 }
 
-export function dangerButtonStyle() {
-  return {
-    width: "100%",
-    padding: "11px 16px",
-    borderRadius: "999px",
-    border: `1px solid ${colors.terracottaLight}`,
-    backgroundColor: colors.terracottaPale,
-    color: colors.terracotta,
-    fontSize: "0.82rem",
-    fontWeight: 600,
-    fontFamily: sans,
-    cursor: "pointer",
-  };
-}
-
-export function textActionStyle() {
-  return {
-    background: "none",
-    border: "none",
-    padding: 0,
-    fontSize: "0.72rem",
-    fontWeight: 600,
-    color: colors.terracotta,
-    fontFamily: sans,
-    cursor: "pointer",
-    textDecoration: "underline",
-    textUnderlineOffset: "2px",
-  };
-}
-
 export function cardSectionStyle() {
   return {
-    padding: "16px",
+    backgroundColor: colors.shell,
+    borderRadius: "14px",
+    padding: "12px",
+    border: `1px solid ${colors.border}`,
   };
 }

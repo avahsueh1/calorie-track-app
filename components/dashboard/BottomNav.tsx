@@ -17,6 +17,9 @@ export function BottomNav() {
   return (
     <nav
       style={{
+        position: "sticky",
+        bottom: 0,
+        zIndex: 30,
         flexShrink: 0,
         backgroundColor: colors.shell,
         borderTop: `1px solid ${colors.border}`,
@@ -48,6 +51,7 @@ export function BottomNav() {
                   height: "34px",
                   borderRadius: "50%",
                   backgroundColor: active ? colors.blush : "transparent",
+                  border: active ? `1px solid ${colors.border}` : "1px solid transparent",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -75,6 +79,7 @@ export function BottomNav() {
               <Link
                 key={item.label}
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 style={{
                   display: "flex",
                   flexDirection: "column",

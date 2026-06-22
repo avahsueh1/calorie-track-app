@@ -1,38 +1,117 @@
-import type { BodyPatternCalendarDay } from "../../types/wellness";
+import type { DailyCheckIn } from "../../types";
+import type {
+  BodyPatternActivityItem,
+  BodyPatternCalendarDay,
+  MacroSummary,
+} from "../../types/wellness";
 import { CHECK_IN_SCALE_WORDS } from "../../types/wellness";
+import { macroColors, macroTargets } from "../../data/sampleDashboard";
+import { buildMacroSummaryFromFoods } from "../../lib/calories";
 
-export const PHASE_COLORS = {
-  menstrual: "#FAD4D4",
-  follicular: "#EEF4ED",
-  ovulatory: "#F7E6D5",
-  luteal: "#ECE7F5",
-  none: "#FFFDFB",
+export type PhaseKind =
+  | "menstrual"
+  | "follicular"
+  | "ovulatory"
+  | "luteal"
+  | "none";
+
+export const PHASE_THEME: Record<
+  PhaseKind,
+  {
+    bg: string;
+    accent: string;
+    todayOutline: string;
+    todayRing: string;
+    shortLabel: string;
+    legendLabel: string;
+  }
+> = {
+  menstrual: {
+    bg: "#FBEDEA",
+    accent: "#8F4E43",
+    todayOutline: "#E4B8AE",
+    todayRing: "#F0D0C8",
+    shortLabel: "Men",
+    legendLabel: "Menstrual",
+  },
+  follicular: {
+    bg: "#F8F1E8",
+    accent: "#7B684E",
+    todayOutline: "#DFCDB5",
+    todayRing: "#EBDFCB",
+    shortLabel: "Fol",
+    legendLabel: "Follicular",
+  },
+  ovulatory: {
+    bg: "#EEF4ED",
+    accent: "#6F8E6D",
+    todayOutline: "#C8DBC4",
+    todayRing: "#D8E9D4",
+    shortLabel: "Ovu",
+    legendLabel: "Ovulatory",
+  },
+  luteal: {
+    bg: "#FFF4DD",
+    accent: "#8A6B35",
+    todayOutline: "#EDD9A8",
+    todayRing: "#F5E8C4",
+    shortLabel: "Lut",
+    legendLabel: "Luteal",
+  },
+  none: {
+    bg: "#FFFDFB",
+    accent: "#7D7068",
+    todayOutline: "#DDD4CC",
+    todayRing: "#EBE4DD",
+    shortLabel: "",
+    legendLabel: "",
+  },
 };
 
 export const CALENDAR_COLORS = {
+  pageBg: "#FBFAF7",
   card: "#FFFFFF",
-  cell: "#FFFDFB",
-  selectedBg: "#FFF7F3",
   border: "#E6D7CB",
-  selectedBorder: "#B97663",
+  blush: "#E8C2B6",
   text: "#3C2B24",
   secondary: "#7D7068",
-  blush: "#E8C2B6",
   terracotta: "#B97663",
   terracottaDark: "#744336",
   sage: "#7E9A7C",
+  snapshotBg: "#FFFDFB",
   white: "#FFFFFF",
+  navBg: "#FFFDFB",
 };
 
 export const scaleWords = [...CHECK_IN_SCALE_WORDS];
 
-export function phaseBackgroundColor(phase: string): string {
+export const SAMPLE_TARGET_CALORIES = 2000;
+
+export function getPhaseKind(phase: string): PhaseKind {
   const normalized = phase.toLowerCase();
-  if (normalized.includes("menstrual")) return PHASE_COLORS.menstrual;
-  if (normalized.includes("follicular")) return PHASE_COLORS.follicular;
-  if (normalized.includes("ovulatory")) return PHASE_COLORS.ovulatory;
-  if (normalized.includes("luteal")) return PHASE_COLORS.luteal;
-  return PHASE_COLORS.none;
+  if (normalized.includes("menstrual")) return "menstrual";
+  if (normalized.includes("follicular")) return "follicular";
+  if (normalized.includes("ovulatory")) return "ovulatory";
+  if (normalized.includes("luteal")) return "luteal";
+  return "none";
+}
+
+export function phaseAccent(phase: string): string {
+  return PHASE_THEME[getPhaseKind(phase)].accent;
+}
+
+export function phaseTodayOutline(phase: string): string {
+  return PHASE_THEME[getPhaseKind(phase)].todayOutline;
+}
+
+export function phaseTodayRing(phase: string): string {
+  return PHASE_THEME[getPhaseKind(phase)].todayRing;
+}
+
+export const INSIGHTS_DAY_PATH_PREFIX = "/insights/day";
+
+export function insightsDayPath(dateKey: string): string {
+  return `${INSIGHTS_DAY_PATH_PREFIX}/${dateKey}`;
 }
 
 export function parseDateAtNoon(value: string): Date {
@@ -48,18 +127,16 @@ export function formatFullDate(dateKey: string): string {
   });
 }
 
-export function formatShortDate(dateKey: string): string {
+export function formatRecapDate(dateKey: string): string {
   return parseDateAtNoon(dateKey).toLocaleDateString("en-US", {
-    month: "short",
+    weekday: "long",
+    month: "long",
     day: "numeric",
-    year: "numeric",
   });
 }
 
 export function toDateKey(year: number, month: number, day: number): string {
-  const monthLabel = String(month + 1).padStart(2, "0");
-  const dayLabel = String(day).padStart(2, "0");
-  return `${year}-${monthLabel}-${dayLabel}`;
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 export function getTodayDateKey(): string {
@@ -68,15 +145,23 @@ export function getTodayDateKey(): string {
 }
 
 export function isValidDateKey(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return false;
-  }
-  const parsed = parseDateAtNoon(value);
-  return !Number.isNaN(parsed.getTime());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  return !Number.isNaN(parseDateAtNoon(value).getTime());
 }
 
 export function formatKcal(value: number): string {
   return value.toLocaleString("en-US");
+}
+
+export function formatActivityDetailLine(activity: BodyPatternActivityItem): string {
+  const parts = [
+    `${activity.durationMinutes} min`,
+    `${formatKcal(activity.calories)} kcal`,
+  ];
+  if (activity.intensity) {
+    parts.push(activity.intensity);
+  }
+  return parts.join(" · ");
 }
 
 export function moodLabel(entry: BodyPatternCalendarDay): string {
@@ -87,24 +172,147 @@ export function energyLabel(entry: BodyPatternCalendarDay): string {
   return scaleWords[entry.energy - 1];
 }
 
-export const SAMPLE_TARGET_CALORIES = 2000;
-
-export const INSIGHTS_SELECTED_DATE_KEY = "calorie-track-app:insights-selected-date";
-
 export interface DayEnergyStats {
   net: number;
   eaten: number;
   burned: number;
   target: number;
+  remaining: number;
 }
 
-export function resolveDayEnergyStats(
-  entry: BodyPatternCalendarDay,
-): DayEnergyStats {
-  const target = entry.targetCalories ?? SAMPLE_TARGET_CALORIES;
-  const burned = entry.burned ?? 280 + (entry.cycleDay % 5) * 20;
-  const net = entry.netCalories ?? target - 500;
-  const eaten = entry.eaten ?? net + burned;
+export function resolveEmptyDayEnergyStats(): DayEnergyStats {
+  const target = SAMPLE_TARGET_CALORIES;
+  return {
+    net: 0,
+    eaten: 0,
+    burned: 0,
+    target,
+    remaining: target,
+  };
+}
 
-  return { net, eaten, burned, target };
+export function resolveDayEnergyStats(entry: BodyPatternCalendarDay): DayEnergyStats {
+  const target = entry.targetCalories ?? SAMPLE_TARGET_CALORIES;
+  const burned = entry.burned ?? 0;
+  const net = entry.netCalories ?? 0;
+  const eaten = entry.eaten ?? (net || burned ? net + burned : 0);
+  const remaining = Math.max(0, target - eaten);
+  return { net, eaten, burned, target, remaining };
+}
+
+export function resolveDayMacroSummary(
+  entry: BodyPatternCalendarDay | null,
+): MacroSummary[] {
+  if (!entry) {
+    return buildMacroSummaryFromFoods([], macroTargets, macroColors);
+  }
+
+  return buildMacroSummaryFromFoods(
+    [
+      {
+        protein: entry.protein ?? 0,
+        carbs: entry.carbs ?? 0,
+        fat: entry.fat ?? 0,
+        fiber: entry.fiber ?? 0,
+      },
+    ],
+    macroTargets,
+    macroColors,
+  );
+}
+
+export function bodyPatternEntryToDailyCheckIn(
+  entry: BodyPatternCalendarDay,
+): DailyCheckIn {
+  return {
+    mood: entry.mood,
+    energy: entry.energy,
+    hunger: entry.hunger,
+    sleepQuality: entry.sleepQuality,
+    stress: entry.stress,
+    cravings: entry.cravings,
+    bloating: entry.bloating ?? "none",
+    soreness: entry.soreness ?? "none",
+    notes: entry.notes,
+  };
+}
+
+export function buildMonthGrid(year: number, month: number) {
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: ({ dateKey: string; dayOfMonth: number } | null)[] = [];
+
+  for (let index = 0; index < firstWeekday; index += 1) {
+    cells.push(null);
+  }
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    cells.push({ dateKey: toDateKey(year, month, day), dayOfMonth: day });
+  }
+  return cells;
+}
+
+export interface MonthGridCell {
+  dateKey: string;
+  dayOfMonth: number;
+}
+
+export function chunkMonthGridIntoWeeks(
+  cells: (MonthGridCell | null)[],
+): (MonthGridCell | null)[][] {
+  const weeks: (MonthGridCell | null)[][] = [];
+  for (let index = 0; index < cells.length; index += 7) {
+    weeks.push(cells.slice(index, index + 7));
+  }
+  return weeks;
+}
+
+export interface PhaseBandSegment {
+  rowIndex: number;
+  colStart: number;
+  colEnd: number;
+  phase: PhaseKind;
+}
+
+export function buildPhaseBandSegments(
+  cells: (MonthGridCell | null)[],
+  getPhase: (dateKey: string) => string,
+): PhaseBandSegment[] {
+  const weeks = chunkMonthGridIntoWeeks(cells);
+  const segments: PhaseBandSegment[] = [];
+
+  weeks.forEach((week, rowIndex) => {
+    let col = 0;
+    while (col < week.length) {
+      const cell = week[col];
+      if (!cell) {
+        col += 1;
+        continue;
+      }
+
+      const phase = getPhaseKind(getPhase(cell.dateKey));
+      if (phase === "none") {
+        col += 1;
+        continue;
+      }
+
+      let end = col;
+      while (end + 1 < week.length) {
+        const next = week[end + 1];
+        if (!next || getPhaseKind(getPhase(next.dateKey)) !== phase) break;
+        end += 1;
+      }
+
+      segments.push({ rowIndex, colStart: col, colEnd: end, phase });
+      col = end + 1;
+    }
+  });
+
+  return segments;
+}
+
+export function formatMonthTitle(year: number, month: number): string {
+  return new Date(year, month, 1).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
 }

@@ -44,6 +44,15 @@ export function getProfileFirstName(name: string): string {
   return name.trim().split(/\s+/)[0] || name;
 }
 
+export function getProfileInitial(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "?";
+  const parts = trimmed.split(/\s+/);
+  const first = parts[0]?.[0] ?? "";
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
+  return (first + last).toUpperCase() || "?";
+}
+
 export function getProfileFocusMessage(goalDirection: GoalDirection): string {
   switch (goalDirection) {
     case "gentle_fat_loss":

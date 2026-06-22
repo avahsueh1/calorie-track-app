@@ -1,0 +1,40 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  background-color: #fffbf7;
+  color: #272018;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+.dashboard-profile-avatar-link:hover {
+  border-color: #e8c9bc;
+}
+
+.dashboard-profile-avatar-link:focus-visible {
+  outline: 2px solid rgba(184, 107, 82, 0.35);
+  outline-offset: 2px;
+}

@@ -109,40 +109,52 @@ export function buildDailySummaryDisplay(
 }
 
 export function buildMacroSummaryFromFoods(
-  foods: { protein: number; carbs: number; fat: number }[],
-  targets: { protein: number; carbs: number; fat: number },
-  colors: { protein: string; carbs: string; fat: string },
+  foods: { protein: number; carbs: number; fat: number; fiber?: number }[],
+  targets: { protein: number; carbs: number; fat: number; fiber: number },
+  colors: { protein: string; carbs: string; fat: string; fiber: string },
 ): MacroSummary[] {
-  const totals = foods.reduce(
+  type MacroTotals = {
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+  };
+
+  const totals = foods.reduce<MacroTotals>(
     (acc, food) => ({
       protein: acc.protein + food.protein,
       carbs: acc.carbs + food.carbs,
       fat: acc.fat + food.fat,
+      fiber: acc.fiber + (food.fiber ?? 0),
     }),
-    { protein: 0, carbs: 0, fat: 0 },
+    { protein: 0, carbs: 0, fat: 0, fiber: 0 },
   );
 
-  return [
-    {
-      label: "Protein",
-      grams: totals.protein,
-      percent: Math.min(
-        100,
-        Math.round((totals.protein / targets.protein) * 100),
-      ),
-      color: colors.protein,
-    },
-    {
-      label: "Carbs",
-      grams: totals.carbs,
-      percent: Math.min(100, Math.round((totals.carbs / targets.carbs) * 100)),
-      color: colors.carbs,
-    },
-    {
-      label: "Fat",
-      grams: totals.fat,
-      percent: Math.min(100, Math.round((totals.fat / targets.fat) * 100)),
-      color: colors.fat,
-    },
+  const entries: {
+    label: string;
+    key: "protein" | "carbs" | "fat" | "fiber";
+    colorKey: MacroSummary["colorKey"];
+  }[] = [
+    { label: "Protein", key: "protein", colorKey: "protein" },
+    { label: "Carbs", key: "carbs", colorKey: "carbs" },
+    { label: "Fat", key: "fat", colorKey: "fat" },
+    { label: "Fiber", key: "fiber", colorKey: "fiber" },
   ];
+
+  return entries.map(({ label, key, colorKey }) => {
+    const grams = totals[key];
+    const targetGrams = targets[key];
+    return {
+      label,
+      grams,
+      targetGrams,
+      unit: "g" as const,
+      percent:
+        targetGrams > 0
+          ? Math.min(100, Math.round((grams / targetGrams) * 100))
+          : 0,
+      color: colors[key],
+      colorKey,
+    };
+  });
 }

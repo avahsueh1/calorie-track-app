@@ -73,6 +73,7 @@ export interface DailyFoodEntry {
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
 }
 
 export interface DailyActivityEntry {
@@ -100,11 +101,16 @@ export interface WellnessUser {
   focusMessage: string;
 }
 
+export type MacroColorKey = "protein" | "carbs" | "fat" | "fiber";
+
 export interface MacroSummary {
   label: string;
   grams: number;
+  targetGrams: number;
+  unit: "g";
   percent: number;
   color: string;
+  colorKey: MacroColorKey;
 }
 
 export interface DailySummaryDisplay {
@@ -129,6 +135,7 @@ export interface DailyCheckInDisplay {
 
 export interface CycleContextDisplay {
   phaseLabel: string;
+  cycleDay: number | null;
   cycleDayLabel: string;
   insightTitle: string;
   insightMessage: string;
@@ -174,6 +181,19 @@ export interface BodyPatternMetric {
   colorKey: "sage" | "terracotta" | "blue" | "gold";
 }
 
+export interface BodyPatternActivityItem {
+  name: string;
+  durationMinutes: number;
+  calories: number;
+  intensity?: ActivityIntensity;
+}
+
+export interface BodyPatternWeightSummary {
+  value: string;
+  unit: "lb" | "kg";
+  note?: string;
+}
+
 /** One logged day in the Insights body pattern month calendar. */
 export interface BodyPatternCalendarDay {
   dateKey: string;
@@ -186,10 +206,19 @@ export interface BodyPatternCalendarDay {
   cravings: CravingLevel;
   sleepQuality: 1 | 2 | 3 | 4 | 5;
   stress: 1 | 2 | 3 | 4 | 5;
+  bloating?: CravingLevel;
+  soreness?: CravingLevel;
   netCalories?: number;
   eaten?: number;
   burned?: number;
   targetCalories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  fiber?: number;
+  activities?: BodyPatternActivityItem[];
+  weight?: BodyPatternWeightSummary;
+  notes?: string;
 }
 
 export interface PatternInsightCardData {

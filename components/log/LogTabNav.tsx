@@ -2,6 +2,25 @@ import { colors, sans } from "../dashboard/theme";
 
 export type LogTab = "food" | "activity" | "check-in" | "weight";
 
+export const LOG_TAB_HREF: Record<LogTab, string> = {
+  food: "/log?tab=food",
+  activity: "/log?tab=activity",
+  "check-in": "/log?tab=check-in",
+  weight: "/log?tab=weight",
+};
+
+export function parseLogTabParam(value: string | null): LogTab {
+  if (
+    value === "food" ||
+    value === "activity" ||
+    value === "check-in" ||
+    value === "weight"
+  ) {
+    return value;
+  }
+  return "food";
+}
+
 const tabs: { id: LogTab; label: string }[] = [
   { id: "food", label: "Food" },
   { id: "activity", label: "Activity" },

@@ -119,6 +119,7 @@ export function buildCycleContextDisplay(
   if (!cycleSettings.cycleTrackingEnabled) {
     return {
       phaseLabel: "Cycle tracking off",
+      cycleDay: null,
       cycleDayLabel: "",
       insightTitle: "Cycle awareness",
       insightMessage:
@@ -138,6 +139,7 @@ export function buildCycleContextDisplay(
 
   return {
     phaseLabel: `${phase} phase`,
+    cycleDay,
     cycleDayLabel: `Cycle day ${cycleDay}`,
     insightTitle: `${phase} phase insight`,
     insightMessage: phaseInsightMessages[phase],

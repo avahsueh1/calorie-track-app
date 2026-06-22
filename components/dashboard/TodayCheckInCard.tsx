@@ -6,7 +6,6 @@ import type { DailyCheckIn } from "../../types";
 import {
   CHECK_IN_SCALE_FIELDS,
   CHECK_IN_SCALE_OPTIONS,
-  CHECK_IN_SCALE_WORDS,
   CHECK_IN_SEVERITY_FIELDS,
   CHECK_IN_SEVERITY_OPTIONS,
   cloneDailyCheckIn,
@@ -16,55 +15,51 @@ import {
   type CravingLevel,
   type ScaleRating,
 } from "../../types/wellness";
+import { CheckInSummaryView } from "./CheckInSummaryView";
 import { cardStyle, colors, labelStyle, sans, sectionTitleStyle } from "./theme";
 
-const summaryColors = {
-  card: "#FFFDFB",
-  inner: "#FBFAF7",
-  text: "#3C2B24",
-  secondary: "#7D7068",
-  label: "#9A8176",
-  terracotta: "#B97663",
-  terracottaDark: "#744336",
-  blushBg: "#FFF7F3",
-  blushBorder: "#E8C2B6",
-  sage: "#7E9A7C",
-  sageBg: "#EEF4ED",
-  border: "#E6D7CB",
-  divider: "#EFE5DD",
-  lavenderBg: "#ECE7F5",
-  lavenderIcon: "#8D7BB8",
-  goldBg: "#F7EFE8",
-  goldIcon: "#B89A6D",
-  blueBg: "#EAF2FA",
-  blueIcon: "#7EA6C8",
-};
-
-const scaleWords = [...CHECK_IN_SCALE_WORDS];
+const palette = {
+  neutral: {
+    text: "#272018",
+    label: "#5C4A42",
+  },
+  accent: {
+    dark: "#744336",
+    bg: "#FFF4EF",
+    border: "#E8C2B6",
+  },
+} as const;
 
 function summaryCardStyle() {
   return {
-    backgroundColor: summaryColors.card,
-    borderRadius: "26px",
-    border: `1px solid ${summaryColors.border}`,
-    padding: "24px",
-    boxShadow: "0 10px 28px rgba(60, 43, 36, 0.06)",
+    backgroundColor: "transparent",
+    borderRadius: 0,
+    border: "none",
+    padding: 0,
+    boxShadow: "none",
   };
 }
 
-function updateSummaryButtonStyle() {
+function editSummaryButtonStyle() {
   return {
-    fontSize: "0.72rem",
-    fontWeight: 600,
-    color: summaryColors.terracottaDark,
-    backgroundColor: summaryColors.blushBg,
-    padding: "7px 14px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "28px",
+    padding: "0 11px",
+    fontSize: "0.75rem",
+    fontWeight: 500,
+    color: palette.accent.dark,
+    backgroundColor: "#FFFDFC",
     borderRadius: "999px",
-    border: `1px solid ${summaryColors.blushBorder}`,
+    border: "1px solid #E8C9BC",
     cursor: "pointer",
     fontFamily: sans,
     flexShrink: 0,
-  };
+    lineHeight: 1,
+    marginTop: "-6px",
+    WebkitTapHighlightColor: "transparent",
+  } as const;
 }
 
 function pillButtonStyle(variant: "primary" | "secondary" | "ghost") {
@@ -225,323 +220,6 @@ function SeveritySelector({
   );
 }
 
-function buildSummarySentence(saved: DailyCheckIn): string {
-  const energy = scaleWords[saved.energy - 1].toLowerCase();
-  const mood = scaleWords[saved.mood - 1].toLowerCase();
-  const stress = scaleWords[saved.stress - 1].toLowerCase();
-
-  if (saved.cravings === "strong") {
-    return `Strong cravings with ${energy} energy. Keep today steady and nourishing.`;
-  }
-
-  if (saved.stress >= 4) {
-    return `${stress.charAt(0).toUpperCase() + stress.slice(1)} stress today. Prioritize rest and gentle nourishment.`;
-  }
-
-  if (saved.energy <= 2) {
-    return `Energy feels ${energy} today. Choose steady meals and a calm pace.`;
-  }
-
-  if (saved.mood >= 4 && saved.cravings === "none") {
-    return `Mood feels ${mood} with manageable hunger. A balanced day ahead.`;
-  }
-
-  if (saved.cravings === "mild") {
-    return `Mild cravings with ${energy} energy. Keep today steady and nourishing.`;
-  }
-
-  return `Today's body signals look ${mood}. Stay aware and nourish at your own pace.`;
-}
-
-function scaleHelper(key: string, value: ScaleRating): string {
-  const word = scaleWords[value - 1];
-  const helpers: Record<string, Record<string, string>> = {
-    mood: {
-      "Very low": "Be gentle with yourself",
-      Low: "Take things slowly",
-      Moderate: "Feeling steady",
-      Good: "Feeling steady",
-      High: "Bright and uplifted",
-    },
-    energy: {
-      "Very low": "Take it gently",
-      Low: "Take it gently",
-      Moderate: "Steady pace",
-      Good: "Good momentum",
-      High: "Strong reserves",
-    },
-    hunger: {
-      "Very low": "Light appetite",
-      Low: "Light appetite",
-      Moderate: "Regular meals",
-      Good: "Well fueled",
-      High: "Fuel as needed",
-    },
-    sleepQuality: {
-      "Very low": "Extra rest may help",
-      Low: "Extra rest may help",
-      Moderate: "Adequate rest",
-      Good: "Rest helped",
-      High: "Well rested",
-    },
-    stress: {
-      "Very low": "Calm baseline",
-      Low: "Calm baseline",
-      Moderate: "Watch the pace",
-      Good: "Manageable load",
-      High: "Prioritize ease",
-    },
-  };
-  return helpers[key]?.[word] ?? "Stay aware";
-}
-
-function severityHelper(field: CheckInSeverityField, value: CravingLevel): string {
-  const helpers: Record<CheckInSeverityField, Record<CravingLevel, string>> = {
-    cravings: {
-      none: "Cravings quiet",
-      mild: "Notice and nourish",
-      strong: "Supportive snacks",
-    },
-    bloating: {
-      none: "Feeling comfortable",
-      mild: "Gentle movement may help",
-      strong: "Extra care may help",
-    },
-    soreness: {
-      none: "Body feels recovered",
-      mild: "Move gently today",
-      strong: "Prioritize recovery",
-    },
-  };
-  return helpers[field][value];
-}
-
-function MetricTile({
-  icon,
-  badgeBackground,
-  iconColor,
-  label,
-  value,
-  helper,
-}: {
-  icon: string;
-  badgeBackground: string;
-  iconColor: string;
-  label: string;
-  value: string;
-  helper: string;
-}) {
-  return (
-    <article
-      style={{
-        backgroundColor: summaryColors.card,
-        border: `1px solid ${summaryColors.border}`,
-        borderRadius: "18px",
-        padding: "16px",
-        display: "flex",
-        gap: "12px",
-        alignItems: "flex-start",
-        minWidth: 0,
-      }}
-    >
-      <span
-        style={{
-          width: "38px",
-          height: "38px",
-          borderRadius: "50%",
-          backgroundColor: badgeBackground,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "0.95rem",
-          lineHeight: 1,
-          flexShrink: 0,
-          color: iconColor,
-        }}
-        aria-hidden="true"
-      >
-        {icon}
-      </span>
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <p
-          style={{
-            margin: "0 0 4px",
-            fontSize: "0.62rem",
-            fontWeight: 600,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: summaryColors.label,
-            fontFamily: sans,
-            lineHeight: 1.3,
-          }}
-        >
-          {label}
-        </p>
-        <p
-          style={{
-            margin: "0 0 4px",
-            fontSize: "1.15rem",
-            fontWeight: 700,
-            color: summaryColors.text,
-            fontFamily: sans,
-            lineHeight: 1.2,
-          }}
-        >
-          {value}
-        </p>
-        <p
-          style={{
-            margin: 0,
-            fontSize: "0.88rem",
-            color: summaryColors.secondary,
-            fontFamily: sans,
-            lineHeight: 1.4,
-          }}
-        >
-          {helper}
-        </p>
-      </div>
-    </article>
-  );
-}
-
-function CheckInSummary({ saved }: { saved: DailyCheckIn }) {
-  const metrics = [
-    {
-      icon: "✦",
-      badgeBackground: summaryColors.blushBg,
-      iconColor: summaryColors.terracotta,
-      key: "mood",
-      label: "Mood",
-      value: scaleWords[saved.mood - 1],
-      helper: scaleHelper("mood", saved.mood),
-    },
-    {
-      icon: "⚡",
-      badgeBackground: summaryColors.goldBg,
-      iconColor: summaryColors.goldIcon,
-      key: "energy",
-      label: "Energy",
-      value: scaleWords[saved.energy - 1],
-      helper: scaleHelper("energy", saved.energy),
-    },
-    {
-      icon: "♡",
-      badgeBackground: summaryColors.sageBg,
-      iconColor: summaryColors.sage,
-      key: "hunger",
-      label: "Hunger",
-      value: scaleWords[saved.hunger - 1],
-      helper: scaleHelper("hunger", saved.hunger),
-    },
-    {
-      icon: "☾",
-      badgeBackground: summaryColors.lavenderBg,
-      iconColor: summaryColors.lavenderIcon,
-      key: "sleepQuality",
-      label: "Sleep",
-      value: scaleWords[saved.sleepQuality - 1],
-      helper: scaleHelper("sleepQuality", saved.sleepQuality),
-    },
-    {
-      icon: "〜",
-      badgeBackground: summaryColors.blueBg,
-      iconColor: summaryColors.blueIcon,
-      key: "stress",
-      label: "Stress",
-      value: scaleWords[saved.stress - 1],
-      helper: scaleHelper("stress", saved.stress),
-    },
-    {
-      icon: "◎",
-      badgeBackground: summaryColors.blushBg,
-      iconColor: summaryColors.terracotta,
-      key: "cravings",
-      label: "Cravings",
-      value: formatSeverityLabel(saved.cravings),
-      helper: severityHelper("cravings", saved.cravings),
-    },
-    {
-      icon: "◌",
-      badgeBackground: summaryColors.goldBg,
-      iconColor: summaryColors.goldIcon,
-      key: "bloating",
-      label: "Bloating",
-      value: formatSeverityLabel(saved.bloating),
-      helper: severityHelper("bloating", saved.bloating),
-    },
-    {
-      icon: "↯",
-      badgeBackground: summaryColors.sageBg,
-      iconColor: summaryColors.sage,
-      key: "soreness",
-      label: "Soreness",
-      value: formatSeverityLabel(saved.soreness),
-      helper: severityHelper("soreness", saved.soreness),
-    },
-  ];
-
-  const notesPreview = saved.notes?.trim();
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-      <p
-        style={{
-          margin: 0,
-          padding: "15px 16px",
-          borderRadius: "18px",
-          backgroundColor: summaryColors.blushBg,
-          border: `1px solid ${summaryColors.blushBorder}`,
-          fontSize: "0.95rem",
-          lineHeight: 1.55,
-          color: summaryColors.terracottaDark,
-          fontFamily: sans,
-        }}
-      >
-        {buildSummarySentence(saved)}
-      </p>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(158px, 1fr))",
-          gap: "12px",
-        }}
-      >
-        {metrics.map((metric) => (
-          <MetricTile
-            key={metric.key}
-            icon={metric.icon}
-            badgeBackground={metric.badgeBackground}
-            iconColor={metric.iconColor}
-            label={metric.label}
-            value={metric.value}
-            helper={metric.helper}
-          />
-        ))}
-      </div>
-
-      {notesPreview ? (
-        <p
-          style={{
-            margin: 0,
-            padding: "12px 14px",
-            borderRadius: "16px",
-            backgroundColor: summaryColors.inner,
-            fontSize: "0.78rem",
-            lineHeight: 1.5,
-            color: summaryColors.secondary,
-            fontFamily: sans,
-            fontStyle: "italic",
-          }}
-        >
-          “{notesPreview.length > 120 ? `${notesPreview.slice(0, 120)}…` : notesPreview}”
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
 export function TodayCheckInCard() {
   const { checkIn, updateCheckIn } = useCheckIn();
   const [draft, setDraft] = useState<DailyCheckIn>(() => cloneDailyCheckIn(checkIn));
@@ -686,48 +364,62 @@ export function TodayCheckInCard() {
   }
 
   return (
-    <section style={summaryCardStyle()}>
+    <section style={{ ...summaryCardStyle(), marginTop: 0 }}>
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: "12px",
-          marginBottom: "18px",
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) auto",
+          columnGap: "8px",
+          rowGap: "4px",
+          marginBottom: "16px",
         }}
       >
-        <div style={{ minWidth: 0 }}>
-          <h2
-            style={{
-              margin: 0,
-              fontFamily: sans,
-              fontSize: "1.35rem",
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.2,
-              color: summaryColors.text,
-            }}
-          >
-            Today&apos;s check-in
-          </h2>
-          <p
-            style={{
-              margin: "6px 0 0",
-              fontSize: "0.74rem",
-              color: summaryColors.sage,
-              fontWeight: 600,
-              fontFamily: sans,
-            }}
-          >
-            {statusLabel}
-          </p>
-        </div>
-        <button type="button" onClick={openEditor} style={updateSummaryButtonStyle()}>
-          Update
+        <h2
+          style={{
+            margin: 0,
+            gridColumn: 1,
+            gridRow: 1,
+            alignSelf: "center",
+            fontFamily: sans,
+            fontSize: "1.625rem",
+            fontWeight: 600,
+            letterSpacing: "-0.02em",
+            lineHeight: 1.15,
+            color: palette.neutral.text,
+            minWidth: 0,
+          }}
+        >
+          Today&apos;s check-in
+        </h2>
+        <button
+          type="button"
+          onClick={openEditor}
+          style={{
+            ...editSummaryButtonStyle(),
+            gridColumn: 2,
+            gridRow: 1,
+            alignSelf: "center",
+            justifySelf: "end",
+          }}
+        >
+          Edit
         </button>
+        <p
+          style={{
+            margin: 0,
+            gridColumn: 1,
+            gridRow: 2,
+            fontSize: "0.75rem",
+            color: palette.neutral.label,
+            fontWeight: 500,
+            fontFamily: sans,
+          }}
+        >
+          {statusLabel}
+        </p>
       </div>
 
-      <CheckInSummary saved={checkIn} />
+      <CheckInSummaryView saved={checkIn} onRowPress={openEditor} />
     </section>
   );
 }
