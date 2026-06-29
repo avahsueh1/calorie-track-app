@@ -6,8 +6,13 @@ import { useMemo } from "react";
 import { AppShell } from "../../../../components/ui/AppShell";
 import { BodyPatternDayDetail } from "../../../../components/insights/BodyPatternDayDetail";
 import { isValidDateKey } from "../../../../components/insights/bodyPatternCalendarUtils";
-import { insightsColors, insightsSans } from "../../../../components/insights/theme";
+import { insightsColors, insightsMainStyle, insightsSans } from "../../../../components/insights/theme";
+import { getCalorieTargetForProfileDate } from "../../../../lib/calorieCycling";
+import { routes } from "../../../../lib/routes";
+import { useInsightsData } from "../../../../components/providers/AppStateProvider";
 import {
+  mergeAppLogsIntoCalendarEntries,
+  mergeInsightsDayNotes,
   resolveBodyPatternCalendarDay,
   sampleBodyPatternMonthEntries,
 } from "../../../../data/sampleInsights";
@@ -15,7 +20,7 @@ import {
 function BackToInsightsLink() {
   return (
     <Link
-      href="/insights"
+      href={routes.insights}
       style={{
         alignSelf: "flex-start",
         display: "inline-flex",
@@ -39,17 +44,37 @@ function BackToInsightsLink() {
 export default function InsightsDayPage() {
   const params = useParams();
   const dateParam = typeof params.date === "string" ? params.date : "";
+  const { insightsDayNotes, effectiveCycleSettings, periodLogs, dailyCheckIns, profile, macroTargets, foodLogs, activityLogs, calorieTrackingEnabled, cycleTrackingEnabled } =
+    useInsightsData();
 
   const day = useMemo(() => {
     if (!isValidDateKey(dateParam)) {
       return null;
     }
-    return resolveBodyPatternCalendarDay(dateParam, sampleBodyPatternMonthEntries);
-  }, [dateParam]);
+
+    const entriesByDate = mergeAppLogsIntoCalendarEntries(
+      mergeInsightsDayNotes(
+        sampleBodyPatternMonthEntries,
+        insightsDayNotes,
+        dailyCheckIns,
+      ),
+      foodLogs,
+      activityLogs,
+    );
+
+    return resolveBodyPatternCalendarDay(
+      dateParam,
+      entriesByDate,
+      insightsDayNotes,
+      effectiveCycleSettings,
+      periodLogs,
+      dailyCheckIns,
+    );
+  }, [dateParam, insightsDayNotes, effectiveCycleSettings, periodLogs, dailyCheckIns, foodLogs, activityLogs]);
 
   if (!day) {
     return (
-      <AppShell mainStyle={{ gap: "10px", paddingBottom: "12px" }}>
+      <AppShell mainStyle={insightsMainStyle()}>
         <BackToInsightsLink />
         <p
           style={{
@@ -66,7 +91,7 @@ export default function InsightsDayPage() {
   }
 
   return (
-    <AppShell mainStyle={{ gap: "14px", paddingTop: "12px", paddingBottom: "12px" }}>
+    <AppShell mainStyle={insightsMainStyle()}>
       <BackToInsightsLink />
 
       <BodyPatternDayDetail
@@ -74,6 +99,11 @@ export default function InsightsDayPage() {
         cycleDay={day.cycleDay}
         phase={day.phase}
         entry={day.entry}
+        storedCheckIn={dailyCheckIns[day.dateKey] ?? null}
+        calorieTarget={getCalorieTargetForProfileDate(profile, day.dateKey)}
+        macroTargets={macroTargets}
+        showCalorieSummary={calorieTrackingEnabled}
+        showCycleContext={cycleTrackingEnabled}
       />
     </AppShell>
   );

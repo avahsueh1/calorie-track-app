@@ -48,6 +48,7 @@ interface QuickAddFabProps {
   onNavigate?: (href: string) => void;
   onClose?: () => void;
   menuId?: string;
+  includeMeal?: boolean;
 }
 
 export function QuickAddFab({
@@ -57,6 +58,7 @@ export function QuickAddFab({
   onNavigate,
   onClose,
   menuId: controlledMenuId,
+  includeMeal = true,
 }: QuickAddFabProps) {
   const internal = useQuickAdd();
   const open = controlledOpen ?? internal.open;
@@ -185,7 +187,12 @@ export function QuickAddFab({
       }}
     >
       {open && fabInteractive ? (
-        <QuickAddMenu menuId={menuId} onNavigate={handleNavigate} align="end" />
+        <QuickAddMenu
+          menuId={menuId}
+          onNavigate={handleNavigate}
+          align="end"
+          includeMeal={includeMeal}
+        />
       ) : null}
 
       <button

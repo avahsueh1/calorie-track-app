@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { routes } from "../../lib/routes";
 import { colors, layout, sans } from "./theme";
 
-const navItems = [
-  { label: "Today", icon: "◷", href: "/" },
-  { label: "Log", icon: "+", href: "/log" },
-  { label: "Insights", icon: "↗", href: "/insights" },
-  { label: "Profile", icon: "○", href: "/profile" },
+const navItems: { label: string; icon: string; href: string }[] = [
+  { label: "Today", icon: "◷", href: routes.home },
+  { label: "Log", icon: "+", href: routes.log },
+  { label: "Insights", icon: "↗", href: routes.insights },
+  { label: "Profile", icon: "○", href: routes.profile },
 ];
 
 export function BottomNav() {
@@ -17,9 +18,6 @@ export function BottomNav() {
   return (
     <nav
       style={{
-        position: "sticky",
-        bottom: 0,
-        zIndex: 30,
         flexShrink: 0,
         backgroundColor: colors.shell,
         borderTop: `1px solid ${colors.border}`,
@@ -39,8 +37,8 @@ export function BottomNav() {
         {navItems.map((item) => {
           const active =
             item.href !== null &&
-            (item.href === "/"
-              ? pathname === "/"
+            (item.href === routes.home
+              ? pathname === routes.home
               : pathname.startsWith(item.href));
 
           const content = (

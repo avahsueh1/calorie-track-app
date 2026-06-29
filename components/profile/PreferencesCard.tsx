@@ -12,7 +12,8 @@ import {
   profileSectionLabelStyle,
   profileSectionTitleStyle,
 } from "./theme";
-import { profileCardPadding, profilePillStyle } from "./shared";
+import { layout, sectionHeaderSpacing } from "../../lib/theme";
+import { profilePillStyle } from "./shared";
 
 interface PreferencesCardProps {
   units: UnitsPreference;
@@ -119,13 +120,13 @@ export function PreferencesCard({
   onWaterReminderChange,
 }: PreferencesCardProps) {
   return (
-    <section style={{ ...profileCardStyle(), ...profileCardPadding() }}>
-      <h2 style={{ ...profileSectionTitleStyle(), marginBottom: "14px" }}>
+    <section style={{ ...profileCardStyle(), padding: layout.cardPadding }}>
+      <h2 style={{ ...profileSectionTitleStyle(), ...sectionHeaderSpacing() }}>
         Preferences &amp; Privacy
       </h2>
 
       <p style={{ ...profileSectionLabelStyle(), marginBottom: "8px" }}>Units</p>
-      <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+      <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
         {(["imperial", "metric"] as UnitsPreference[]).map((option) => (
           <button
             key={option}
@@ -139,7 +140,7 @@ export function PreferencesCard({
       </div>
 
       <p style={{ ...profileSectionLabelStyle(), marginBottom: "8px" }}>Calorie display</p>
-      <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+      <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
         <button
           type="button"
           style={{ ...profilePillStyle(calorieDisplay === "eaten"), flex: 1 }}
@@ -158,7 +159,7 @@ export function PreferencesCard({
       <p
         style={{
           ...profileHelperStyle(),
-          margin: "0 0 16px",
+          margin: "0 0 14px",
           fontSize: "0.72rem",
           fontStyle: "italic",
         }}
@@ -188,13 +189,13 @@ export function PreferencesCard({
       <p
         style={{
           ...profileSectionLabelStyle(),
-          marginTop: "16px",
+          marginTop: "14px",
           marginBottom: "8px",
         }}
       >
         Profile visibility
       </p>
-      <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
+      <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
         <button
           type="button"
           style={{ ...profilePillStyle(profileVisibility === "private"), flex: 1 }}
@@ -219,6 +220,7 @@ export function PreferencesCard({
       <p
         style={{
           ...profileHelperStyle(),
+          margin: 0,
           padding: "10px 12px",
           borderRadius: "12px",
           backgroundColor: profileColors.blushBg,

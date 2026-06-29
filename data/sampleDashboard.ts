@@ -1,3 +1,4 @@
+import { getEmptyDailyCheckIn } from "../lib/checkInHelpers";
 import type { DailyCheckIn } from "../types";
 import type {
   CycleContextDisplay,
@@ -5,9 +6,9 @@ import type {
   DailyFoodEntry,
   WellnessUser,
 } from "../types/wellness";
-export const DAILY_CALORIE_TARGET = 2000; // legacy reference; live TDEE comes from ProfileProvider
+export const DAILY_CALORIE_TARGET = 2000; // legacy sample data only — live target from profile.nutritionPlan
 
-/** Macro progress targets (placeholder until tied to profile goals). */
+/** Legacy sample macro targets for demo calendar entries without profile context. */
 export const macroTargets = {
   protein: 114,
   carbs: 250,
@@ -63,21 +64,9 @@ export function getDefaultDailyActivities(): DailyActivityEntry[] {
   return defaultDailyActivities.map((entry) => ({ ...entry }));
 }
 
-/** Single default source for today's body check-in (shared by provider + UI). */
-export const defaultDailyCheckIn: DailyCheckIn = {
-  energy: 3,
-  mood: 4,
-  hunger: 3,
-  cravings: "mild",
-  sleepQuality: 4,
-  stress: 2,
-  bloating: "mild",
-  soreness: "none",
-  notes: "",
-};
-
+/** Empty check-in used when no entry exists for today. */
 export function getDefaultDailyCheckIn(): DailyCheckIn {
-  return { ...defaultDailyCheckIn, notes: defaultDailyCheckIn.notes ?? "" };
+  return getEmptyDailyCheckIn();
 }
 
 export const sampleUser: WellnessUser = {

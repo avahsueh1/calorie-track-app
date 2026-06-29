@@ -3,6 +3,7 @@
 import { ClipboardCheck, Droplets, Utensils } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useState } from "react";
+import { routes } from "../../lib/routes";
 import { LOG_TAB_HREF } from "../log/LogTabNav";
 import { colors, sans } from "./theme";
 
@@ -18,7 +19,7 @@ export const QUICK_ADD_ITEMS = [
   {
     id: "water",
     label: "Add water",
-    href: "/log",
+    href: routes.log,
     icon: Droplets,
     iconColor: "#5F8A9E",
     iconBg: "#E8F2F6",
@@ -33,7 +34,8 @@ export const QUICK_ADD_ITEMS = [
   },
 ] as const;
 
-export function useQuickAdd() {
+export function useQuickAdd(options?: { includeMeal?: boolean }) {
+  const includeMeal = options?.includeMeal ?? true;
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const menuId = useId();
@@ -71,13 +73,19 @@ interface QuickAddMenuProps {
   menuId: string;
   onNavigate: (href: string) => void;
   align?: "center" | "end";
+  includeMeal?: boolean;
 }
 
 export function QuickAddMenu({
   menuId,
   onNavigate,
   align = "end",
+  includeMeal = true,
 }: QuickAddMenuProps) {
+  const items = includeMeal
+    ? QUICK_ADD_ITEMS
+    : QUICK_ADD_ITEMS.filter((item) => item.id !== "meal");
+
   return (
     <div
       id={menuId}
@@ -92,7 +100,7 @@ export function QuickAddMenu({
         pointerEvents: "auto",
       }}
     >
-      {QUICK_ADD_ITEMS.map(({ id, label, href, icon: Icon, iconColor, iconBg }, index) => (
+      {items.map(({ id, label, href, icon: Icon, iconColor, iconBg }, index) => (
         <button
           key={id}
           type="button"

@@ -1,222 +1,174 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { DailyCheckIn } from "../../types";
 import {
-  CHECK_IN_SCALE_WORDS,
-  formatSeverityLabel,
-  type CheckInSeverityField,
-  type CravingLevel,
-  type ScaleRating,
-} from "../../types/wellness";
-import { buildCheckInSummarySentence } from "../../lib/checkInSummary";
-import { DailyNote } from "../ui/DailyNote";
-import { MetricRow } from "../ui/MetricRow";
-import { resolveStatusTone } from "../ui/StatusPill";
+  countSelectedSymptoms,
+  getSelectedSymptomsByCategory,
+} from "../../lib/checkInHelpers";
+import { selectionToStatusTone } from "../../lib/symptomOptions";
+import { getSymptomIconStyle } from "../../lib/symptomIcons";
+import { colors, sans, spacing } from "../../lib/theme";
+import { IconBubble } from "../ui/IconBubble";
+import { StatusPill } from "../ui/StatusPill";
 
-export const checkInIconPalette = {
-  mood: { bg: "#DDEAD8", color: "#5A7350" },
-  energy: { bg: "#F7D7BE", color: "#B87A4A" },
-  hunger: { bg: "#E1EFD9", color: "#5E8A54" },
-  sleepQuality: { bg: "#DDEAF8", color: "#5A7A9A" },
-  stress: { bg: "#DDE7F6", color: "#6078A0" },
-  cravings: { bg: "#F4DCD5", color: "#A86050" },
-  bloating: { bg: "#F3E8D8", color: "#9A8055" },
-  soreness: { bg: "#E3EBDD", color: "#6B8570" },
-} as const;
+const sectionLabelStyle = {
+  margin: 0,
+  fontSize: "0.72rem",
+  fontWeight: 600,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase" as const,
+  color: colors.muted,
+  fontFamily: sans,
+};
 
-const TILE_GAP = "11px";
-const scaleWords = [...CHECK_IN_SCALE_WORDS];
-
-function formatScaleRatingValue(rating: ScaleRating): string {
-  return `${rating}/5`;
-}
-
-function getRowIconStyle(
-  key: keyof typeof checkInIconPalette,
-): { iconBackground: string; iconColor: string } {
-  const treatment = checkInIconPalette[key];
-  return { iconBackground: treatment.bg, iconColor: treatment.color };
-}
-
-function scaleHelper(key: string, value: ScaleRating): string {
-  const word = scaleWords[value - 1];
-  const helpers: Record<string, Record<string, string>> = {
-    mood: {
-      "Very low": "Be gentle with yourself",
-      Low: "Take things slowly",
-      Moderate: "Feeling steady",
-      Good: "Feeling steady",
-      High: "Bright and uplifted",
-    },
-    energy: {
-      "Very low": "Take it gently",
-      Low: "Take it gently",
-      Moderate: "Steady pace",
-      Good: "Good momentum",
-      High: "Strong reserves",
-    },
-    hunger: {
-      "Very low": "Light appetite",
-      Low: "Light appetite",
-      Moderate: "Regular meals",
-      Good: "Well fueled",
-      High: "Fuel as needed",
-    },
-    sleepQuality: {
-      "Very low": "Extra rest may help",
-      Low: "Extra rest may help",
-      Moderate: "Adequate rest",
-      Good: "Rest helped",
-      High: "Well rested",
-    },
-    stress: {
-      "Very low": "Calm baseline",
-      Low: "Calm baseline",
-      Moderate: "Watch the pace",
-      Good: "Manageable load",
-      High: "Prioritize ease",
-    },
-  };
-  return helpers[key]?.[word] ?? "Stay aware";
-}
-
-function severityHelper(field: CheckInSeverityField, value: CravingLevel): string {
-  const helpers: Record<CheckInSeverityField, Record<CravingLevel, string>> = {
-    cravings: {
-      none: "Cravings quiet",
-      mild: "Notice gently",
-      strong: "Supportive snacks",
-    },
-    bloating: {
-      none: "Feeling comfortable",
-      mild: "Move gently",
-      strong: "Extra care may help",
-    },
-    soreness: {
-      none: "Recovered",
-      mild: "Move gently today",
-      strong: "Prioritize recovery",
-    },
-  };
-  return helpers[field][value];
-}
+const stackStyle = {
+  display: "flex",
+  flexDirection: "column" as const,
+  gap: spacing.block,
+};
 
 interface CheckInSummaryViewProps {
   saved: DailyCheckIn;
   onRowPress?: () => void;
+  notesSection?: ReactNode;
+  footerSection?: ReactNode;
 }
 
-export function CheckInSummaryView({ saved, onRowPress }: CheckInSummaryViewProps) {
-  const metrics = [
-    {
-      icon: "✦",
-      ...getRowIconStyle("mood"),
-      key: "mood",
-      label: "Mood",
-      value: formatScaleRatingValue(saved.mood),
-      helper: scaleHelper("mood", saved.mood),
-      valueKind: "rating" as const,
-    },
-    {
-      icon: "⚡",
-      ...getRowIconStyle("energy"),
-      key: "energy",
-      label: "Energy",
-      value: formatScaleRatingValue(saved.energy),
-      helper: scaleHelper("energy", saved.energy),
-      valueKind: "rating" as const,
-    },
-    {
-      icon: "♡",
-      ...getRowIconStyle("hunger"),
-      key: "hunger",
-      label: "Hunger",
-      value: formatScaleRatingValue(saved.hunger),
-      helper: scaleHelper("hunger", saved.hunger),
-      valueKind: "rating" as const,
-    },
-    {
-      icon: "☾",
-      ...getRowIconStyle("sleepQuality"),
-      key: "sleepQuality",
-      label: "Sleep",
-      value: formatScaleRatingValue(saved.sleepQuality),
-      helper: scaleHelper("sleepQuality", saved.sleepQuality),
-      valueKind: "rating" as const,
-    },
-    {
-      icon: "〜",
-      ...getRowIconStyle("stress"),
-      key: "stress",
-      label: "Stress",
-      value: formatScaleRatingValue(saved.stress),
-      helper: scaleHelper("stress", saved.stress),
-      valueKind: "rating" as const,
-    },
-    {
-      icon: "◎",
-      ...getRowIconStyle("cravings"),
-      key: "cravings",
-      label: "Cravings",
-      value: formatSeverityLabel(saved.cravings),
-      helper: severityHelper("cravings", saved.cravings),
-      valueKind: "severity" as const,
-    },
-    {
-      icon: "◌",
-      ...getRowIconStyle("bloating"),
-      key: "bloating",
-      label: "Bloating",
-      value: formatSeverityLabel(saved.bloating),
-      helper: severityHelper("bloating", saved.bloating),
-      valueKind: "severity" as const,
-    },
-    {
-      icon: "↯",
-      ...getRowIconStyle("soreness"),
-      key: "soreness",
-      label: "Soreness",
-      value: formatSeverityLabel(saved.soreness),
-      helper: severityHelper("soreness", saved.soreness),
-      valueKind: "severity" as const,
-    },
-  ];
+export function CheckInSummaryView({
+  saved,
+  onRowPress,
+  notesSection,
+  footerSection,
+}: CheckInSummaryViewProps) {
+  const sections = getSelectedSymptomsByCategory(saved);
+  const symptomCount = countSelectedSymptoms(saved);
+  const hasNotes = Boolean(notesSection);
+  const hasFooter = Boolean(footerSection);
+  const hasSymptoms = symptomCount > 0;
 
-  const notesPreview = saved.notes?.trim();
+  if (!hasNotes && !hasSymptoms && !hasFooter) {
+    return null;
+  }
+
+  if (!hasSymptoms) {
+    return (
+      <div style={stackStyle}>
+        {notesSection}
+        {footerSection}
+      </div>
+    );
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      <DailyNote variant="summary">{buildCheckInSummarySentence(saved)}</DailyNote>
+    <div style={stackStyle}>
+      {notesSection}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: TILE_GAP,
-        }}
-      >
-        {metrics.map((metric) => (
-          <MetricRow
-            key={metric.key}
-            icon={metric.icon}
-            iconBackground={metric.iconBackground}
-            iconColor={metric.iconColor}
-            label={metric.label}
-            note={metric.helper}
-            value={metric.value}
-            tone={
-              metric.valueKind === "severity"
-                ? resolveStatusTone(metric.value)
-                : "good"
-            }
-            onPress={onRowPress}
-          />
-        ))}
-      </div>
+      {sections.map((section) => (
+        <div
+          key={section.category}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: spacing.block,
+          }}
+        >
+          <p style={sectionLabelStyle}>{section.title}</p>
+          <ul
+            style={{
+              margin: 0,
+              padding: 0,
+              listStyle: "none",
+              display: "flex",
+              flexDirection: "column",
+              gap: spacing.block,
+              width: "100%",
+            }}
+          >
+            {section.items.map((item) => {
+              const iconStyle = getSymptomIconStyle(item.key);
+              return (
+                <li key={item.key} style={{ width: "100%" }}>
+                  <div
+                    style={{
+                      width: "100%",
+                      boxSizing: "border-box",
+                      borderRadius: "12px",
+                      border: `1px solid ${colors.border}`,
+                      backgroundColor: colors.shell,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={onRowPress}
+                      disabled={!onRowPress}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        width: "100%",
+                        gap: spacing.inline,
+                        padding: "10px 12px",
+                        border: "none",
+                        background: "transparent",
+                        cursor: onRowPress ? "pointer" : "default",
+                        fontFamily: sans,
+                        textAlign: "left",
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: spacing.inline,
+                          minWidth: 0,
+                        }}
+                      >
+                        <IconBubble
+                          icon={iconStyle.icon}
+                          backgroundColor={iconStyle.backgroundColor}
+                          color={iconStyle.color}
+                          size="sm"
+                        />
+                        <span
+                          style={{
+                            fontSize: "0.84rem",
+                            fontWeight: 500,
+                            color: colors.text,
+                          }}
+                        >
+                          {item.label}
+                        </span>
+                      </span>
+                      <StatusPill
+                        tone={selectionToStatusTone(item.selection)}
+                        value={item.selectionLabel}
+                      />
+                    </button>
+                    {item.note?.trim() ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          padding: "0 12px 10px 50px",
+                          fontSize: "0.78rem",
+                          lineHeight: 1.45,
+                          color: colors.muted,
+                          fontFamily: sans,
+                        }}
+                      >
+                        {item.note.trim()}
+                      </p>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
 
-      {notesPreview ? (
-        <DailyNote variant="savedNotes">{notesPreview}</DailyNote>
-      ) : null}
+      {footerSection}
     </div>
   );
 }

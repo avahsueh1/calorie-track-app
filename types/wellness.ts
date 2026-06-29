@@ -1,26 +1,12 @@
 import type { DailyCheckIn } from "./index";
 import type { ProfileLifeStage } from "./profile";
+import type { SymptomKey, SymptomSeverity } from "./index";
 
-export type { DailyCheckIn, CycleContext } from "./index";
+export type { DailyCheckIn, CycleContext, SymptomKey, SymptomSeverity } from "./index";
 
 export type ScaleRating = 1 | 2 | 3 | 4 | 5;
 export type CravingLevel = "none" | "mild" | "strong";
 export type SeverityLevel = CravingLevel;
-
-export type CheckInScaleField = keyof Pick<
-  DailyCheckIn,
-  "mood" | "energy" | "hunger" | "sleepQuality" | "stress"
->;
-
-export type CheckInSeverityField = "cravings" | "bloating" | "soreness";
-
-export const CHECK_IN_SCALE_OPTIONS: ScaleRating[] = [1, 2, 3, 4, 5];
-
-export const CHECK_IN_SEVERITY_OPTIONS: SeverityLevel[] = [
-  "none",
-  "mild",
-  "strong",
-];
 
 export const CHECK_IN_SCALE_WORDS = [
   "Very low",
@@ -29,39 +15,6 @@ export const CHECK_IN_SCALE_WORDS = [
   "Good",
   "High",
 ] as const;
-
-export const CHECK_IN_SCALE_FIELDS: {
-  key: CheckInScaleField;
-  label: string;
-  summaryLabel: string;
-}[] = [
-  { key: "mood", label: "Mood", summaryLabel: "Mood" },
-  { key: "energy", label: "Energy", summaryLabel: "Energy" },
-  { key: "hunger", label: "Hunger", summaryLabel: "Hunger" },
-  { key: "sleepQuality", label: "Sleep quality", summaryLabel: "Sleep" },
-  { key: "stress", label: "Stress", summaryLabel: "Stress" },
-];
-
-export const CHECK_IN_SEVERITY_FIELDS: {
-  key: CheckInSeverityField;
-  label: string;
-}[] = [
-  { key: "cravings", label: "Cravings" },
-  { key: "bloating", label: "Bloating" },
-  { key: "soreness", label: "Soreness" },
-];
-
-export function formatSeverityLabel(value: SeverityLevel): string {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-export function cloneDailyCheckIn(value: DailyCheckIn): DailyCheckIn {
-  return {
-    ...value,
-    notes: value.notes ?? "",
-  };
-}
-
 export type MealType = "Breakfast" | "Lunch" | "Dinner" | "Snack";
 export type ActivityIntensity = "Gentle" | "Moderate" | "High";
 
@@ -151,20 +104,49 @@ export interface WeeklyEnergyDay {
 export interface WeeklyNetDay {
   day: string;
   dayFull: string;
+  dateKey: string;
   eaten: number;
   burned: number;
   net: number;
+  target: number;
   mood: string;
   energy: string;
   hunger: string;
 }
 
+/** @deprecated Migrated into ProgressJournalEntry */
 export interface WeightLogEntry {
   id: string;
   weight: number;
   note: string;
   loggedAt: string;
   date: string;
+}
+
+/** @deprecated Migrated into ProgressJournalEntry */
+export interface ProgressPhoto {
+  id: string;
+  date: string;
+  dataUrl: string;
+  caption?: string;
+}
+
+/** Date-keyed progress log — weight, photo, and note for the same day stay together. */
+export interface ProgressJournalEntry {
+  date: string;
+  weightKg?: number;
+  photoDataUrl?: string;
+  note?: string;
+  updatedAt: string;
+}
+
+export type PeriodFlow = "light" | "medium" | "heavy";
+
+export interface PeriodLog {
+  id: string;
+  startDate: string;
+  endDate?: string;
+  flow?: PeriodFlow;
 }
 
 export interface CycleSettings {
@@ -225,4 +207,5 @@ export interface PatternInsightCardData {
   title: string;
   message: string;
   accent: "cream" | "lavender" | "blue";
+  icon?: string;
 }

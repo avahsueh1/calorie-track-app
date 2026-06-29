@@ -1,8 +1,10 @@
 import {
+  profileCardStyle,
   profileColors,
   profileSans,
   profileSectionLabelStyle,
 } from "./theme";
+import { layout } from "../../lib/theme";
 
 export function profileFieldLabel(text: string) {
   return { ...profileSectionLabelStyle(), marginBottom: "6px", display: "block" as const };
@@ -28,8 +30,58 @@ export const profileSelectStyle = {
 };
 
 export function profileCardPadding() {
-  return { padding: "18px" };
+  return { padding: layout.cardPadding };
 }
+
+export function profileSettingsModuleCardStyle() {
+  return {
+    ...profileCardStyle(),
+    padding: "16px 18px",
+  };
+}
+
+export function profileSettingsModuleHeaderStyle() {
+  return {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "14px",
+    marginBottom: "14px",
+  } as const;
+}
+
+export function profileSettingsModuleIconStyle(
+  backgroundColor: string,
+  color: string,
+) {
+  return {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "44px",
+    height: "44px",
+    borderRadius: "14px",
+    backgroundColor,
+    color,
+    flexShrink: 0,
+  } as const;
+}
+
+export const profileSettingsModuleLinkButtonStyle = {
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "6px",
+  padding: "11px 16px",
+  borderRadius: "999px",
+  border: `1px solid ${profileColors.terracotta}`,
+  backgroundColor: profileColors.terracotta,
+  color: "#FFF7F3",
+  fontFamily: profileSans,
+  fontSize: "0.8rem",
+  fontWeight: 600,
+  textDecoration: "none",
+} as const;
 
 export function profileInputSuffixGroupStyle() {
   return {
@@ -88,6 +140,26 @@ export function profilePrimaryButtonStyle() {
     fontFamily: profileSans,
     cursor: "pointer",
   };
+}
+
+export function profileSaveButtonStyle(disabled: boolean) {
+  if (disabled) {
+    return {
+      width: "100%",
+      padding: "12px 16px",
+      borderRadius: "999px",
+      border: "1px solid #E6D7CB",
+      backgroundColor: "#E6D7CB",
+      color: "#7D7068",
+      fontSize: "0.85rem",
+      fontWeight: 600,
+      fontFamily: profileSans,
+      cursor: "not-allowed",
+      opacity: 0.75,
+    };
+  }
+
+  return profilePrimaryButtonStyle();
 }
 
 export function profileSecondaryButtonStyle() {

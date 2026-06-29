@@ -41,7 +41,7 @@ export const profilePageOuterStyle = pageOuterStyle;
 export const profileShellStyle = shellStyle;
 
 export function profileMainStyle(overrides?: CSSProperties): CSSProperties {
-  return mainContentStyle({ paddingBottom: "12px", gap: layout.cardGap, ...overrides });
+  return mainContentStyle(overrides);
 }
 
 export function profileCardStyle(): CSSProperties {

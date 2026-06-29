@@ -2,7 +2,7 @@
 
 import type { DailySummaryDisplay, MacroSummary } from "../../types/wellness";
 import { AppCard } from "../ui/AppCard";
-import { CalorieStatGrid, MacroStatGrid } from "../ui/EnergyMacroStatGrids";
+import { CalorieStatGrid, MacroStrip } from "../ui/EnergyMacroStatGrids";
 import { NourishmentRing } from "./NourishmentRing";
 import { colors, formatNumber, sans } from "./theme";
 
@@ -14,14 +14,21 @@ interface NourishmentCardProps {
 export function NourishmentCard({ summary, macros }: NourishmentCardProps) {
   return (
     <AppCard
-      padding="23px 20px 16px"
+      padding="24px 20px 20px"
       style={{
         position: "relative",
         overflow: "hidden",
       }}
     >
-      <div style={{ position: "relative", zIndex: 1 }}>
-        <header style={{ marginBottom: "20px" }}>
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <header>
           <h2
             style={{
               margin: 0,
@@ -49,13 +56,30 @@ export function NourishmentCard({ summary, macros }: NourishmentCardProps) {
           </p>
         </header>
 
-        <div style={{ display: "flex", justifyContent: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginTop: "20px",
+            marginBottom: "11px",
+          }}
+        >
           <NourishmentRing summary={summary} />
         </div>
 
-        <div style={{ marginTop: "10px" }}>
+        <div style={{ marginTop: "8px" }}>
+          <MacroStrip macros={macros} showLabel={false} />
+        </div>
+
+        <div
+          style={{
+            borderTop: "1px solid #EEE5DC",
+            paddingTop: "22px",
+          }}
+        >
           <CalorieStatGrid
-            tileSize="compact"
+            tileSize="hero"
+            showLabel={false}
             summary={{
               eaten: summary.eaten,
               burned: summary.burned,
@@ -63,10 +87,6 @@ export function NourishmentCard({ summary, macros }: NourishmentCardProps) {
               remaining: summary.remaining,
             }}
           />
-        </div>
-
-        <div style={{ marginTop: "16px" }}>
-          <MacroStatGrid macros={macros} />
         </div>
       </div>
     </AppCard>

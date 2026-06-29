@@ -1,49 +1,35 @@
+import type { DailyCheckIn } from "../types";
 import type {
   BodyPatternCalendarDay,
   BodyPatternMetric,
+  CravingLevel,
+  CycleSettings,
+  DailyActivityEntry,
+  DailyFoodEntry,
   PatternInsightCardData,
+  PeriodLog,
 } from "../types/wellness";
+import { getCyclePhaseForDate, resolveCycleContextForDate } from "../lib/appStateHelpers";
 
 /** Copy strings for the weekly net calories chart UI. */
 export const sampleWeeklyNetCopy = {
-  tapHint: "Tap a day to see details.",
+  tapHint: "Hover a day for a quick summary. Tap to pin details below.",
   netNote: "Net = eaten - burned.",
   footerMessage:
     "Daily changes are normal. Look for weekly patterns, not perfect days.",
 };
 
 /** Cycle settings for sample month data — mirrors defaultAppProfile cycle fields. */
-const SAMPLE_CYCLE = {
+export const sampleCycleSettings: CycleSettings = {
+  cycleTrackingEnabled: true,
+  lifeStage: "regular_cycle",
   lastPeriodStart: "2026-05-28",
-  cycleLength: 28,
-  periodLength: 5,
+  averageCycleLength: 28,
+  averagePeriodLength: 5,
 };
 
-function parseDateAtNoon(value: string): Date {
-  return new Date(`${value}T12:00:00`);
-}
-
-function getCycleDay(dateKey: string): number {
-  const start = parseDateAtNoon(SAMPLE_CYCLE.lastPeriodStart);
-  const current = parseDateAtNoon(dateKey);
-  const diffDays = Math.floor(
-    (current.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-  );
-  if (diffDays < 0) {
-    return 1;
-  }
-  return (diffDays % SAMPLE_CYCLE.cycleLength) + 1;
-}
-
-function getPhase(cycleDay: number): string {
-  const { periodLength, cycleLength } = SAMPLE_CYCLE;
-  const follicularEnd = Math.max(periodLength + 1, Math.round(cycleLength * 0.46));
-  const ovulatoryEnd = Math.max(follicularEnd + 1, Math.round(cycleLength * 0.57));
-
-  if (cycleDay <= periodLength) return "Menstrual";
-  if (cycleDay <= follicularEnd) return "Follicular";
-  if (cycleDay <= ovulatoryEnd) return "Ovulatory";
-  return "Luteal";
+function getSampleCyclePhase(dateKey: string) {
+  return getCyclePhaseForDate(dateKey, sampleCycleSettings);
 }
 
 function deriveSampleMacros(eaten: number) {
@@ -59,7 +45,7 @@ function buildSampleEntry(
   dateKey: string,
   partial: Omit<BodyPatternCalendarDay, "dateKey" | "cycleDay" | "phase">,
 ): BodyPatternCalendarDay {
-  const cycleDay = getCycleDay(dateKey);
+  const { cycleDay, phase } = getSampleCyclePhase(dateKey);
   const burned = partial.burned ?? 280 + (cycleDay % 5) * 20;
   const net = partial.netCalories ?? 1500;
   const eaten = partial.eaten ?? net + burned;
@@ -69,7 +55,7 @@ function buildSampleEntry(
   return {
     dateKey,
     cycleDay,
-    phase: getPhase(cycleDay),
+    phase,
     ...partial,
     eaten,
     burned,
@@ -305,6 +291,73 @@ export const sampleBodyPatternMonthEntries: Record<string, BodyPatternCalendarDa
     ].map((entry) => [entry.dateKey, entry]),
   );
 
+function createMinimalCalendarEntry(
+  dateKey: string,
+  partial: Pick<
+    BodyPatternCalendarDay,
+    "eaten" | "burned" | "netCalories" | "protein" | "carbs" | "fat" | "fiber"
+  >,
+): BodyPatternCalendarDay {
+  return {
+    dateKey,
+    cycleDay: 0,
+    phase: "",
+    checkInCompleted: false,
+    mood: 3,
+    energy: 3,
+    hunger: 3,
+    cravings: "none" as CravingLevel,
+    sleepQuality: 3,
+    stress: 3,
+    bloating: "none",
+    soreness: "none",
+    ...partial,
+  };
+}
+
+/** Overlay real food/activity logs onto calendar entries for nutrition status. */
+export function mergeAppLogsIntoCalendarEntries(
+  entriesByDate: Record<string, BodyPatternCalendarDay>,
+  foodLogs: Record<string, DailyFoodEntry[]>,
+  activityLogs: Record<string, DailyActivityEntry[]>,
+): Record<string, BodyPatternCalendarDay> {
+  const merged = { ...entriesByDate };
+  const dateKeys = new Set([
+    ...Object.keys(foodLogs),
+    ...Object.keys(activityLogs),
+  ]);
+
+  for (const dateKey of dateKeys) {
+    const foods = foodLogs[dateKey] ?? [];
+    const activities = activityLogs[dateKey] ?? [];
+    const eaten = foods.reduce((sum, food) => sum + food.calories, 0);
+    const burned = activities.reduce(
+      (sum, activity) => sum + activity.caloriesBurned,
+      0,
+    );
+
+    if (eaten === 0 && burned === 0) {
+      continue;
+    }
+
+    const nutritionFields = {
+      eaten,
+      burned,
+      netCalories: eaten - burned,
+      protein: foods.reduce((sum, food) => sum + food.protein, 0),
+      carbs: foods.reduce((sum, food) => sum + food.carbs, 0),
+      fat: foods.reduce((sum, food) => sum + food.fat, 0),
+      fiber: foods.reduce((sum, food) => sum + (food.fiber ?? 0), 0),
+    };
+
+    merged[dateKey] = merged[dateKey]
+      ? { ...merged[dateKey], ...nutritionFields }
+      : createMinimalCalendarEntry(dateKey, nutritionFields);
+  }
+
+  return merged;
+}
+
 export interface BodyPatternCalendarDayView {
   dateKey: string;
   cycleDay: number;
@@ -315,14 +368,82 @@ export interface BodyPatternCalendarDayView {
 export function resolveBodyPatternCalendarDay(
   dateKey: string,
   entriesByDate: Record<string, BodyPatternCalendarDay> = sampleBodyPatternMonthEntries,
+  noteOverrides: Record<string, string> = {},
+  cycleSettings: CycleSettings = sampleCycleSettings,
+  periodLogs: PeriodLog[] = [],
+  dailyCheckIns: Record<string, DailyCheckIn> = {},
 ): BodyPatternCalendarDayView {
-  const cycleDay = getCycleDay(dateKey);
+  const { cycleDay, phase } = resolveCycleContextForDate(
+    dateKey,
+    cycleSettings,
+    periodLogs,
+  );
+  const baseEntry = entriesByDate[dateKey] ?? null;
+  const entry = baseEntry
+    ? {
+        ...baseEntry,
+        cycleDay,
+        phase,
+        notes: resolveInsightsDayNote(
+          dateKey,
+          baseEntry,
+          noteOverrides,
+          dailyCheckIns,
+        ),
+      }
+    : null;
+
   return {
     dateKey,
     cycleDay,
-    phase: getPhase(cycleDay),
-    entry: entriesByDate[dateKey] ?? null,
+    phase,
+    entry,
   };
+}
+
+/** Resolved note for a date: check-in note wins, then legacy override, then sample. */
+export function resolveInsightsDayNote(
+  dateKey: string,
+  entry: BodyPatternCalendarDay | null,
+  noteOverrides: Record<string, string>,
+  dailyCheckIns: Record<string, DailyCheckIn> = {},
+): string {
+  const checkInNote = dailyCheckIns[dateKey]?.notes?.trim();
+  if (checkInNote) {
+    return checkInNote;
+  }
+
+  if (dateKey in noteOverrides) {
+    return noteOverrides[dateKey];
+  }
+
+  return entry?.notes ?? "";
+}
+
+export function mergeInsightsDayNotes(
+  entriesByDate: Record<string, BodyPatternCalendarDay>,
+  noteOverrides: Record<string, string>,
+  dailyCheckIns: Record<string, DailyCheckIn> = {},
+): Record<string, BodyPatternCalendarDay> {
+  const merged = { ...entriesByDate };
+
+  for (const dateKey of new Set([
+    ...Object.keys(merged),
+    ...Object.keys(noteOverrides),
+    ...Object.keys(dailyCheckIns),
+  ])) {
+    const note = resolveInsightsDayNote(
+      dateKey,
+      merged[dateKey] ?? null,
+      noteOverrides,
+      dailyCheckIns,
+    );
+    if (merged[dateKey] && note) {
+      merged[dateKey] = { ...merged[dateKey], notes: note };
+    }
+  }
+
+  return merged;
 }
 
 export const sampleBodyPatternCalendarDefaults = {
@@ -333,6 +454,8 @@ export const sampleBodyPatternCalendarDefaults = {
 export const sampleBodyPatternCalendarCopy = {
   subtitle: "See how your check-ins line up with your cycle.",
   tapHint: "Tap a date to view day details.",
+  nutritionSubtitle: "See how your daily intake compares with your targets.",
+  nutritionTapHint: "Tap a date to view day details.",
 };
 
 export const sampleBodyPatterns: BodyPatternMetric[] = [

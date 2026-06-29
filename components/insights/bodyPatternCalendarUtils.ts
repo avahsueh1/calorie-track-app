@@ -1,12 +1,19 @@
 import type { DailyCheckIn } from "../../types";
+import { migrateLegacyDailyCheckIn } from "../../lib/checkInHelpers";
 import type {
   BodyPatternActivityItem,
   BodyPatternCalendarDay,
   MacroSummary,
 } from "../../types/wellness";
 import { CHECK_IN_SCALE_WORDS } from "../../types/wellness";
-import { macroColors, macroTargets } from "../../data/sampleDashboard";
+import type { MacroTargets } from "../../types/profile";
 import { buildMacroSummaryFromFoods } from "../../lib/calories";
+import {
+  getCalorieTargetStatus,
+  type CalorieTargetStatus,
+} from "../../lib/calorieTargetStatus";
+import { routes } from "../../lib/routes";
+import { macroColors } from "../../data/sampleDashboard";
 
 export type PhaseKind =
   | "menstrual"
@@ -111,7 +118,7 @@ export function phaseTodayRing(phase: string): string {
 export const INSIGHTS_DAY_PATH_PREFIX = "/insights/day";
 
 export function insightsDayPath(dateKey: string): string {
-  return `${INSIGHTS_DAY_PATH_PREFIX}/${dateKey}`;
+  return routes.insightDay(dateKey);
 }
 
 export function parseDateAtNoon(value: string): Date {
@@ -178,30 +185,48 @@ export interface DayEnergyStats {
   burned: number;
   target: number;
   remaining: number;
+  status: CalorieTargetStatus;
 }
 
-export function resolveEmptyDayEnergyStats(): DayEnergyStats {
-  const target = SAMPLE_TARGET_CALORIES;
+export function resolveEmptyDayEnergyStats(
+  calorieTarget: number = SAMPLE_TARGET_CALORIES,
+): DayEnergyStats {
   return {
     net: 0,
     eaten: 0,
     burned: 0,
-    target,
-    remaining: target,
+    target: calorieTarget,
+    remaining: calorieTarget,
+    status: getCalorieTargetStatus({ target: calorieTarget }),
   };
 }
 
-export function resolveDayEnergyStats(entry: BodyPatternCalendarDay): DayEnergyStats {
-  const target = entry.targetCalories ?? SAMPLE_TARGET_CALORIES;
+export function resolveDayEnergyStats(
+  entry: BodyPatternCalendarDay,
+  calorieTarget: number = SAMPLE_TARGET_CALORIES,
+): DayEnergyStats {
+  const target = calorieTarget;
   const burned = entry.burned ?? 0;
-  const net = entry.netCalories ?? 0;
+  const net = entry.netCalories ?? (entry.eaten ?? 0) - burned;
   const eaten = entry.eaten ?? (net || burned ? net + burned : 0);
-  const remaining = Math.max(0, target - eaten);
-  return { net, eaten, burned, target, remaining };
+  const remaining = target - net;
+  const status = getCalorieTargetStatus({
+    eaten,
+    burned,
+    target,
+    netCalories: net,
+  });
+  return { net, eaten, burned, target, remaining, status };
 }
 
 export function resolveDayMacroSummary(
   entry: BodyPatternCalendarDay | null,
+  macroTargets: MacroTargets = {
+    protein: 98,
+    carbs: 285,
+    fat: 57,
+    fiber: 25,
+  },
 ): MacroSummary[] {
   if (!entry) {
     return buildMacroSummaryFromFoods([], macroTargets, macroColors);
@@ -224,7 +249,7 @@ export function resolveDayMacroSummary(
 export function bodyPatternEntryToDailyCheckIn(
   entry: BodyPatternCalendarDay,
 ): DailyCheckIn {
-  return {
+  return migrateLegacyDailyCheckIn({
     mood: entry.mood,
     energy: entry.energy,
     hunger: entry.hunger,
@@ -234,7 +259,7 @@ export function bodyPatternEntryToDailyCheckIn(
     bloating: entry.bloating ?? "none",
     soreness: entry.soreness ?? "none",
     notes: entry.notes,
-  };
+  });
 }
 
 export function buildMonthGrid(year: number, month: number) {
@@ -314,5 +339,37 @@ export function formatMonthTitle(year: number, month: number): string {
   return new Date(year, month, 1).toLocaleDateString("en-US", {
     month: "long",
     year: "numeric",
+  });
+}
+
+export type NutritionDayStatus = CalorieTargetStatus;
+
+export const NUTRITION_STATUS_COLORS: Record<NutritionDayStatus, string> = {
+  under: "#EEF4ED",
+  near: "#F7EFE8",
+  over: "#FFF7F3",
+  noData: "#FFFDFB",
+};
+
+export const NUTRITION_STATUS_LABELS: Record<NutritionDayStatus, string> = {
+  under: "Under target",
+  near: "Near target",
+  over: "Over target",
+  noData: "No log",
+};
+
+export function resolveNutritionDayStatus(
+  entry: BodyPatternCalendarDay | null,
+  calorieTarget: number,
+): NutritionDayStatus {
+  if (!entry) {
+    return getCalorieTargetStatus({ target: calorieTarget });
+  }
+
+  return getCalorieTargetStatus({
+    eaten: entry.eaten,
+    burned: entry.burned,
+    target: calorieTarget,
+    netCalories: entry.netCalories,
   });
 }

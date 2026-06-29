@@ -1,6 +1,6 @@
 "use client";
 
-import type { ActivityLevel, Sex } from "../../types";
+import type { Sex } from "../../types";
 import {
   BODY_FAT_RANGE_OPTIONS,
   bodyFatPctToRangeKey,
@@ -28,24 +28,12 @@ import {
   profileStatCardStyle,
 } from "./shared";
 
-const activityLabels: Record<ActivityLevel, string> = {
-  sedentary: "Sedentary",
-  light: "Light",
-  moderate: "Moderate",
-  active: "Active",
-  very_active: "Very active",
-};
-
-const FEET_OPTIONS = [4, 5, 6, 7];
-const INCHES_OPTIONS = Array.from({ length: 12 }, (_, index) => index);
-
 interface BodyEnergyCardProps {
   age: number;
   sex: Sex;
   heightCm: number;
   weightLb: number;
   bodyFatPct?: number;
-  activityLevel: ActivityLevel;
   bmr: number;
   tdee: number;
   onAgeChange: (value: number) => void;
@@ -53,8 +41,10 @@ interface BodyEnergyCardProps {
   onHeightChange: (feet: number, inches: number) => void;
   onWeightLbChange: (value: number) => void;
   onBodyFatPctChange: (value: number | undefined) => void;
-  onActivityLevelChange: (value: ActivityLevel) => void;
 }
+
+const FEET_OPTIONS = [4, 5, 6, 7];
+const INCHES_OPTIONS = Array.from({ length: 12 }, (_, index) => index);
 
 export function BodyEnergyCard({
   age,
@@ -62,7 +52,6 @@ export function BodyEnergyCard({
   heightCm,
   weightLb,
   bodyFatPct,
-  activityLevel,
   bmr,
   tdee,
   onAgeChange,
@@ -70,7 +59,6 @@ export function BodyEnergyCard({
   onHeightChange,
   onWeightLbChange,
   onBodyFatPctChange,
-  onActivityLevelChange,
 }: BodyEnergyCardProps) {
   const { feet, inches } = cmToFeetInches(heightCm);
 
@@ -203,27 +191,6 @@ export function BodyEnergyCard({
           </select>
           <p style={{ ...profileHelperStyle(), marginTop: "6px", fontSize: "0.72rem" }}>
             Choose the range that feels closest — an estimate is fine.
-          </p>
-        </div>
-
-        <div>
-          <label style={profileFieldLabel("Activity level")} htmlFor="profile-activity">
-            Activity level
-          </label>
-          <select
-            id="profile-activity"
-            value={activityLevel}
-            onChange={(e) => onActivityLevelChange(e.target.value as ActivityLevel)}
-            style={profileSelectStyle}
-          >
-            {(Object.keys(activityLabels) as ActivityLevel[]).map((level) => (
-              <option key={level} value={level}>
-                {activityLabels[level]}
-              </option>
-            ))}
-          </select>
-          <p style={{ ...profileHelperStyle(), marginTop: "6px", fontSize: "0.72rem" }}>
-            Used to estimate maintenance calories.
           </p>
         </div>
       </div>

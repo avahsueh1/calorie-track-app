@@ -1,5 +1,94 @@
 import type { ActivityLevel, Sex } from "../types";
-import type { UnitsPreference } from "../types/profile";
+import type { DetailedActivityProfile } from "../types/activity";
+import type { AppProfile, GoalRatePreference, NutritionPlan, UnitsPreference } from "../types/profile";
+import { calculateBmr, calculateTdee, resolveBmr } from "./calories";
+import { getCalorieTargetForProfileDate } from "./calorieCycling";
+import { nutritionPlansEqual } from "./nutritionPlan";
+import { todayDateKey } from "./appStateHelpers";
+
+/** Drop legacy detailed activity inputs — UI now uses activity level only. */
+export function sanitizeAppProfile(profile: AppProfile): AppProfile {
+  if (!profile.detailedActivityProfile) {
+    return profile;
+  }
+
+  return { ...profile, detailedActivityProfile: undefined };
+}
+
+/** BMR, maintenance TDEE, and saved calorie target from one profile snapshot. */
+export function getProfileEnergyMetrics(profile: AppProfile) {
+  const sanitized = sanitizeAppProfile(profile);
+  const userProfile = toUserProfile(sanitized);
+  const maintenanceTdee = calculateTdee(userProfile);
+  const bmr = resolveBmr(sanitized);
+
+  return {
+    userProfile,
+    bmr,
+    maintenanceTdee,
+    dailyCalorieTarget: getCalorieTargetForProfileDate(
+      sanitized,
+      todayDateKey(),
+    ),
+    macroTargets: sanitized.nutritionPlan.macros,
+  };
+}
+
+/** Stable comparison for profile save/dirty tracking. */
+export function profilesEqual(a: AppProfile, b: AppProfile): boolean {
+  return (
+    a.name === b.name &&
+    a.email === b.email &&
+    a.age === b.age &&
+    a.sex === b.sex &&
+    a.heightCm === b.heightCm &&
+    a.weightKg === b.weightKg &&
+    a.heightDisplay === b.heightDisplay &&
+    a.weightDisplay === b.weightDisplay &&
+    a.bodyFatPct === b.bodyFatPct &&
+    a.activityLevel === b.activityLevel &&
+    detailedActivityProfilesEqual(
+      a.detailedActivityProfile,
+      b.detailedActivityProfile,
+    ) &&
+    a.goalDirection === b.goalDirection &&
+    a.goalRate === b.goalRate &&
+    nutritionPlansEqual(a.nutritionPlan, b.nutritionPlan) &&
+    a.cycleTrackingEnabled === b.cycleTrackingEnabled &&
+    a.lifeStage === b.lifeStage &&
+    a.lastPeriodStart === b.lastPeriodStart &&
+    a.averageCycleLength === b.averageCycleLength &&
+    a.averagePeriodLength === b.averagePeriodLength &&
+    a.units === b.units &&
+    a.calorieDisplay === b.calorieDisplay &&
+    a.checkInReminder === b.checkInReminder &&
+    a.mealLogReminder === b.mealLogReminder
+  );
+}
+
+function detailedActivityProfilesEqual(
+  a?: DetailedActivityProfile,
+  b?: DetailedActivityProfile,
+): boolean {
+  if (!a && !b) {
+    return true;
+  }
+
+  if (!a || !b) {
+    return false;
+  }
+
+  return (
+    a.workoutsPerWeek === b.workoutsPerWeek &&
+    a.workoutHoursPerWeek === b.workoutHoursPerWeek &&
+    a.yogaHoursPerWeek === b.yogaHoursPerWeek &&
+    a.strengthTrainingHoursPerWeek === b.strengthTrainingHoursPerWeek &&
+    a.cardioHoursPerWeek === b.cardioHoursPerWeek &&
+    a.walkingHoursPerWeek === b.walkingHoursPerWeek &&
+    a.averageDailySteps === b.averageDailySteps &&
+    JSON.stringify(a.activityTypes ?? []) === JSON.stringify(b.activityTypes ?? [])
+  );
+}
 
 /** Parse weight from display text; returns kg or null if unparseable. */
 export function parseWeightToKg(
@@ -155,6 +244,7 @@ export function toUserProfile(input: {
   weightKg: number;
   bodyFatPct?: number;
   activityLevel: ActivityLevel;
+  detailedActivityProfile?: DetailedActivityProfile;
 }) {
   return {
     age: input.age,
@@ -163,5 +253,6 @@ export function toUserProfile(input: {
     weightKg: input.weightKg,
     bodyFatPct: input.bodyFatPct,
     activityLevel: input.activityLevel,
+    detailedActivityProfile: undefined,
   };
 }

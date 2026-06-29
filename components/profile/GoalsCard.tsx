@@ -1,101 +1,75 @@
 "use client";
 
-import type { DailyTargetMode } from "../../types";
-import type { GoalDirection } from "../../types/profile";
+import { useMemo } from "react";
+import type { AppProfile, GoalDirection, GoalRatePreference } from "../../types/profile";
+import {
+  buildGoalRateOptions,
+  GOAL_DIRECTION_OPTIONS,
+  shouldShowGoalRatePicker,
+} from "../../lib/goalOptions";
 import {
   profileCardStyle,
   profileColors,
   profileHelperStyle,
-  profileSectionLabelStyle,
   profileSectionTitleStyle,
 } from "./theme";
-import { profileCardPadding, profilePillStyle } from "./shared";
-
-const goalDirectionOptions: { id: GoalDirection; label: string }[] = [
-  { id: "maintain", label: "Maintain" },
-  { id: "gentle_fat_loss", label: "Gentle fat loss" },
-  { id: "build_muscle", label: "Build muscle" },
-  { id: "improve_energy", label: "Improve energy" },
-  { id: "recovery_consistency", label: "Recovery / consistency" },
-];
-
-const dailyTargetOptions: { id: DailyTargetMode; label: string }[] = [
-  { id: "maintain", label: "Maintain" },
-  { id: "gentle_deficit", label: "Gentle deficit" },
-  { id: "performance", label: "Performance / energy" },
-  { id: "recovery", label: "Recovery day" },
-];
+import { profileCardPadding } from "./shared";
+import { ProfileCollapsibleOptionGroup } from "./ProfileCollapsibleOptionGroup";
 
 interface GoalsCardProps {
+  profile: AppProfile;
   goalDirection: GoalDirection;
-  dailyTargetMode: DailyTargetMode;
+  goalRate: GoalRatePreference;
   onGoalDirectionChange: (value: GoalDirection) => void;
-  onDailyTargetModeChange: (value: DailyTargetMode) => void;
-}
-
-function PillGroup<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  options: { id: T; label: string }[];
-  value: T;
-  onChange: (value: T) => void;
-}) {
-  return (
-    <div style={{ marginBottom: "16px" }}>
-      <p style={{ ...profileSectionLabelStyle(), marginBottom: "8px" }}>{label}</p>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "8px",
-        }}
-      >
-        {options.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            style={{
-              ...profilePillStyle(value === option.id),
-              flex: "1 1 calc(50% - 8px)",
-              minWidth: "120px",
-            }}
-            onClick={() => onChange(option.id)}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+  onGoalRateChange: (value: GoalRatePreference) => void;
 }
 
 export function GoalsCard({
+  profile,
   goalDirection,
-  dailyTargetMode,
+  goalRate,
   onGoalDirectionChange,
-  onDailyTargetModeChange,
+  onGoalRateChange,
 }: GoalsCardProps) {
+  const showPace = shouldShowGoalRatePicker(goalDirection);
+
+  const paceOptions = useMemo(
+    () =>
+      buildGoalRateOptions({
+        age: profile.age,
+        sex: profile.sex,
+        heightCm: profile.heightCm,
+        weightKg: profile.weightKg,
+        bodyFatPct: profile.bodyFatPct,
+        activityLevel: profile.activityLevel,
+        detailedActivityProfile: profile.detailedActivityProfile,
+        goalDirection,
+        goalRate,
+      }),
+    [profile, goalDirection, goalRate],
+  );
+
   return (
     <section style={{ ...profileCardStyle(), ...profileCardPadding() }}>
       <h2 style={{ ...profileSectionTitleStyle(), marginBottom: "14px" }}>Goals</h2>
 
-      <PillGroup
+      <ProfileCollapsibleOptionGroup
+        name="profile-goal-direction"
         label="Goal direction"
-        options={goalDirectionOptions}
+        options={GOAL_DIRECTION_OPTIONS}
         value={goalDirection}
         onChange={onGoalDirectionChange}
       />
 
-      <PillGroup
-        label="Daily target mode"
-        options={dailyTargetOptions}
-        value={dailyTargetMode}
-        onChange={onDailyTargetModeChange}
-      />
+      {showPace ? (
+        <ProfileCollapsibleOptionGroup
+          name="profile-goal-rate"
+          label="Preferred pace"
+          options={paceOptions}
+          value={goalRate}
+          onChange={onGoalRateChange}
+        />
+      ) : null}
 
       <p
         style={{
@@ -104,9 +78,12 @@ export function GoalsCard({
           borderRadius: "12px",
           backgroundColor: profileColors.cream,
           border: `1px solid ${profileColors.divider}`,
+          margin: 0,
         }}
       >
-        Goals can change. This app focuses on trends, not perfect days.
+        {showPace
+          ? "Pace sets your calorie target and an estimated weekly weight change. Your calorie plan below updates automatically."
+          : "Your calorie plan below updates from this goal and your profile."}
       </p>
     </section>
   );

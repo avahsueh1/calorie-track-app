@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import {
+  getCalorieTargetStatus,
+  type CalorieTargetStatus,
+} from "../../lib/calorieTargetStatus";
 import type { WeeklyNetDay } from "../../types/wellness";
 import {
   insightsCardStyle,
@@ -9,6 +13,7 @@ import {
   insightsSerif,
   insightsSectionTitleStyle,
 } from "./theme";
+import { WeeklyDayHoverCallout } from "./WeeklyDayHoverCallout";
 
 interface WeeklyEnergyChartProps {
   days: WeeklyNetDay[];
@@ -39,8 +44,6 @@ const CHART_COLORS = {
   textSecondary: "#7D7068",
 };
 
-const NEAR_TARGET_TOLERANCE = 250;
-
 function formatKcal(value: number): string {
   return value.toLocaleString("en-US");
 }
@@ -49,29 +52,100 @@ function scaleY(value: number, maxY: number, innerHeight: number): number {
   return PADDING.top + innerHeight - (value / maxY) * innerHeight;
 }
 
-function isInTargetRange(
-  net: number,
-  targetRange: { min: number; max: number },
-): boolean {
-  return net >= targetRange.min && net <= targetRange.max;
+function dayTarget(day: WeeklyNetDay, fallback: number): number {
+  return day.target && day.target > 0 ? day.target : fallback;
 }
 
-function isNearTarget(net: number, target: number): boolean {
-  return Math.abs(net - target) <= NEAR_TARGET_TOLERANCE;
+function dayCalorieStatus(
+  day: WeeklyNetDay,
+  fallbackTarget: number,
+): CalorieTargetStatus {
+  return getCalorieTargetStatus({
+    eaten: day.eaten,
+    burned: day.burned,
+    target: dayTarget(day, fallbackTarget),
+    netCalories: day.net,
+  });
 }
 
-function statusBarColor(
-  net: number,
-  targetRange: { min: number; max: number },
+function statusBarColorFromStatus(
+  status: CalorieTargetStatus,
   hovered: boolean,
 ): string {
-  if (isInTargetRange(net, targetRange)) {
+  if (status === "near") {
     return hovered ? CHART_COLORS.nearTargetHover : CHART_COLORS.nearTarget;
   }
-  if (net < targetRange.min) {
+  if (status === "under" || status === "noData") {
     return hovered ? CHART_COLORS.underTargetHover : CHART_COLORS.underTarget;
   }
   return hovered ? CHART_COLORS.overTargetHover : CHART_COLORS.overTarget;
+}
+
+function statusBarColorForDay(
+  day: WeeklyNetDay,
+  fallbackTarget: number,
+  hovered: boolean,
+): string {
+  return statusBarColorFromStatus(
+    dayCalorieStatus(day, fallbackTarget),
+    hovered,
+  );
+}
+
+function DayDetailCard({
+  day,
+  netNote,
+}: {
+  day: WeeklyNetDay;
+  netNote: string;
+}) {
+  return (
+    <div
+      style={{
+        marginTop: "12px",
+        padding: "14px 14px 12px",
+        borderRadius: "16px",
+        backgroundColor: "#FFFDFB",
+        border: `1px solid ${insightsColors.border}`,
+      }}
+    >
+      <p
+        style={{
+          margin: "0 0 10px",
+          fontFamily: insightsSerif,
+          fontSize: "1.05rem",
+          color: CHART_COLORS.text,
+        }}
+      >
+        {day.dayFull}
+      </p>
+      <div
+        style={{
+          display: "grid",
+          gap: "6px",
+          fontFamily: insightsSans,
+          fontSize: "0.84rem",
+          color: CHART_COLORS.text,
+          lineHeight: 1.45,
+        }}
+      >
+        <p style={{ margin: 0 }}>Net: {formatKcal(day.net)} kcal</p>
+        <p style={{ margin: 0 }}>Eaten: {formatKcal(day.eaten)} kcal</p>
+        <p style={{ margin: 0 }}>Burned: {formatKcal(day.burned)} kcal</p>
+      </div>
+      <p
+        style={{
+          margin: "10px 0 0",
+          fontSize: "0.72rem",
+          lineHeight: 1.4,
+          color: CHART_COLORS.textSecondary,
+          fontFamily: insightsSans,
+        }}
+      >
+        {netNote}
+      </p>
+    </div>
+  );
 }
 
 export function WeeklyEnergyChart({
@@ -95,19 +169,26 @@ export function WeeklyEnergyChart({
   const avgNet = Math.round(
     days.reduce((sum, day) => sum + day.net, 0) / days.length,
   );
-  const daysNearTarget = days.filter((day) =>
-    isNearTarget(day.net, tdeeTarget),
+  const avgTarget = Math.round(
+    days.reduce((sum, day) => sum + dayTarget(day, tdeeTarget), 0) /
+      days.length,
+  );
+  const daysNearTarget = days.filter(
+    (day) => dayCalorieStatus(day, tdeeTarget) === "near",
   ).length;
 
-  const targetY = scaleY(tdeeTarget, maxY, innerHeight);
+  const targetY = scaleY(avgTarget, maxY, innerHeight);
   const slotWidth = innerWidth / days.length;
   const barWidth = Math.min(28, slotWidth * 0.58);
+  const highlightedIndex = hoveredIndex ?? selectedIndex;
   const selectedDay =
     selectedIndex === null ? null : days[selectedIndex] ?? null;
+  const hoveredDay =
+    hoveredIndex === null ? null : days[hoveredIndex] ?? null;
 
   const summaryItems = [
     { label: "Avg net", value: `${formatKcal(avgNet)} kcal` },
-    { label: "Target", value: `${formatKcal(tdeeTarget)} kcal` },
+    { label: "Avg target", value: `${formatKcal(avgTarget)} kcal` },
     {
       label: "Near target",
       value: `${daysNearTarget} / ${days.length} days`,
@@ -118,15 +199,35 @@ export function WeeklyEnergyChart({
     setSelectedIndex((current) => (current === index ? null : index));
   }
 
-  function getBarFill(index: number, net: number): string {
-    const isSelected = selectedIndex === index;
+  function getBarFill(index: number): string {
+    const isHighlighted = highlightedIndex === index;
     const isHovered = hoveredIndex === index;
 
-    if (isSelected) {
+    if (isHighlighted && selectedIndex === index) {
       return isHovered ? CHART_COLORS.selectedHover : CHART_COLORS.selected;
     }
 
-    return statusBarColor(net, targetRange, isHovered);
+    return statusBarColorForDay(days[index], tdeeTarget, isHighlighted);
+  }
+
+  function getCalloutPosition(index: number, net: number) {
+    const slotX = PADDING.left + index * slotWidth;
+    const centerX = slotX + slotWidth / 2;
+    const barTopY = scaleY(Math.max(net, 0), maxY, innerHeight);
+    const leftPercent = (centerX / CHART_WIDTH) * 100;
+    const topPercent = (barTopY / CHART_HEIGHT) * 100;
+    const edgeShift =
+      index <= 1
+        ? "translateX(0)"
+        : index >= days.length - 2
+          ? "translateX(-100%)"
+          : "translateX(-50%)";
+
+    return {
+      left: `${leftPercent}%`,
+      top: `${topPercent}%`,
+      transform: `${edgeShift} translateY(calc(-100% - 8px))`,
+    };
   }
 
   return (
@@ -205,7 +306,8 @@ export function WeeklyEnergyChart({
         {tapHint}
       </p>
 
-      <div style={{ marginTop: "8px", overflowX: "auto" }}>
+      <div style={{ marginTop: "8px" }}>
+        <div style={{ position: "relative", overflow: "visible" }}>
         <svg
           viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
           width="100%"
@@ -263,7 +365,7 @@ export function WeeklyEnergyChart({
             const x = slotX + (slotWidth - barWidth) / 2;
             const topY = scaleY(day.net, maxY, innerHeight);
             const height = baselineY - topY;
-            const isSelected = selectedIndex === index;
+            const isHighlighted = highlightedIndex === index;
 
             return (
               <g key={day.day}>
@@ -277,9 +379,12 @@ export function WeeklyEnergyChart({
                   onClick={() => handleBarSelect(index)}
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(null)}
+                  onFocus={() => setHoveredIndex(index)}
+                  onBlur={() => setHoveredIndex(null)}
                   aria-label={`${day.dayFull}, ${formatKcal(day.net)} net calories`}
                   role="button"
-                  aria-pressed={isSelected}
+                  aria-pressed={selectedIndex === index}
+                  tabIndex={0}
                 />
                 <rect
                   x={x}
@@ -287,7 +392,7 @@ export function WeeklyEnergyChart({
                   width={barWidth}
                   height={height}
                   rx={4}
-                  fill={getBarFill(index, day.net)}
+                  fill={getBarFill(index)}
                   style={{
                     cursor: "pointer",
                     pointerEvents: "none",
@@ -298,11 +403,13 @@ export function WeeklyEnergyChart({
                   y={CHART_HEIGHT - 8}
                   textAnchor="middle"
                   fill={
-                    isSelected ? CHART_COLORS.text : CHART_COLORS.textSecondary
+                    isHighlighted
+                      ? CHART_COLORS.text
+                      : CHART_COLORS.textSecondary
                   }
                   fontSize={10}
                   fontFamily={insightsSans}
-                  fontWeight={isSelected ? 600 : 400}
+                  fontWeight={isHighlighted ? 600 : 400}
                   style={{ pointerEvents: "none" }}
                 >
                   {day.day}
@@ -311,61 +418,23 @@ export function WeeklyEnergyChart({
             );
           })}
         </svg>
-      </div>
 
-      {selectedDay ? (
-        <div
-          style={{
-            marginTop: "12px",
-            padding: "14px 14px 12px",
-            borderRadius: "16px",
-            backgroundColor: "#FFFDFB",
-            border: `1px solid ${insightsColors.border}`,
-          }}
-        >
-          <p
-            style={{
-              margin: "0 0 10px",
-              fontFamily: insightsSerif,
-              fontSize: "1.05rem",
-              color: CHART_COLORS.text,
-            }}
-          >
-            {selectedDay.dayFull}
-          </p>
+        {hoveredDay ? (
           <div
             style={{
-              display: "grid",
-              gap: "6px",
-              fontFamily: insightsSans,
-              fontSize: "0.84rem",
-              color: CHART_COLORS.text,
-              lineHeight: 1.45,
+              position: "absolute",
+              zIndex: 20,
+              ...getCalloutPosition(hoveredIndex!, hoveredDay.net),
             }}
           >
-            <p style={{ margin: 0 }}>Net: {formatKcal(selectedDay.net)} kcal</p>
-            <p style={{ margin: 0 }}>
-              Eaten: {formatKcal(selectedDay.eaten)} kcal
-            </p>
-            <p style={{ margin: 0 }}>
-              Burned: {formatKcal(selectedDay.burned)} kcal
-            </p>
-            <p style={{ margin: 0 }}>Mood: {selectedDay.mood}</p>
-            <p style={{ margin: 0 }}>Energy: {selectedDay.energy}</p>
-            <p style={{ margin: 0 }}>Hunger: {selectedDay.hunger}</p>
+            <WeeklyDayHoverCallout day={hoveredDay} />
           </div>
-          <p
-            style={{
-              margin: "10px 0 0",
-              fontSize: "0.72rem",
-              lineHeight: 1.4,
-              color: CHART_COLORS.textSecondary,
-              fontFamily: insightsSans,
-            }}
-          >
-            {netNote}
-          </p>
+        ) : null}
         </div>
+      </div>
+
+      {selectedDay && hoveredIndex === null ? (
+        <DayDetailCard day={selectedDay} netNote={netNote} />
       ) : null}
 
       <p

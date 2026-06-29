@@ -2,14 +2,17 @@ import type { CSSProperties } from "react";
 
 /** Shared mobile app tokens — UI-agnostic, safe to reuse in React Native later. */
 export const layout = {
-  shellMaxWidth: "430px",
+  shellMaxWidth: "440px",
   pagePadding: "16px",
-  cardGap: "14px",
+  cardGap: "18px",
   cardRadius: "24px",
-  cardPadding: "18px",
+  cardPadding: "20px",
+  cardPaddingCompact: "16px",
+  cardPaddingLarge: "24px",
+  sectionHeaderGap: "12px",
   touchMinHeight: "44px",
   buttonMinHeight: "44px",
-  navHeight: "72px",
+  navClearance: "18px",
 } as const;
 
 export const colors = {
@@ -32,9 +35,11 @@ export const colors = {
 } as const;
 
 export const spacing = {
-  section: "18px",
-  group: "8px",
-  inline: "6px",
+  section: layout.cardGap,
+  group: "10px",
+  inline: "12px",
+  /** Even rhythm between stacked blocks (notes, symptom groups, insights). */
+  block: layout.cardGap,
 } as const;
 
 export const serif =
@@ -71,12 +76,28 @@ export function mainContentStyle(overrides?: CSSProperties): CSSProperties {
   return {
     flex: 1,
     width: "100%",
-    padding: `${layout.pagePadding} ${layout.pagePadding} 12px`,
+    padding: `${layout.pagePadding} ${layout.pagePadding} ${layout.navClearance}`,
     display: "flex",
     flexDirection: "column",
-    gap: spacing.section,
+    gap: layout.cardGap,
     ...overrides,
   };
+}
+
+export function appMainStyle(overrides?: CSSProperties): CSSProperties {
+  return mainContentStyle(overrides);
+}
+
+export function stackStyle(gap: string = layout.cardGap): CSSProperties {
+  return {
+    display: "flex",
+    flexDirection: "column",
+    gap,
+  };
+}
+
+export function sectionHeaderSpacing(): CSSProperties {
+  return { marginBottom: layout.sectionHeaderGap };
 }
 
 export function groupStackStyle(): CSSProperties {

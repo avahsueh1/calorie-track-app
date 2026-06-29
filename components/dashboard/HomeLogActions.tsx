@@ -12,29 +12,29 @@ import {
 import { sans } from "./theme";
 
 const CENTER_BUTTON_COLOR = "#C58E7C";
-const HOME_SECTION_GAP = 14;
+const HOME_SECTION_GAP = 18;
 const INLINE_BUTTON_HEIGHT = 47;
 const INLINE_BLOCK_MAX_HEIGHT = 120;
 
-function useShowFloatingFab(calorieCardRef: RefObject<HTMLElement | null>) {
+function useShowFloatingFab(scrollAnchorRef: RefObject<HTMLDivElement | null>) {
   const [showFloating, setShowFloating] = useState(false);
 
   useEffect(() => {
     function evaluate() {
-      const card = calorieCardRef.current;
-      if (!card) {
+      const anchor = scrollAnchorRef.current;
+      if (!anchor) {
         return;
       }
 
-      const cardRect = card.getBoundingClientRect();
+      const anchorRect = anchor.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
-      const cardPastThird = cardRect.bottom < viewportHeight / 3;
+      const anchorPastThird = anchorRect.bottom < viewportHeight / 3;
 
       const inlineBlockBottom =
-        cardRect.bottom + HOME_SECTION_GAP + INLINE_BUTTON_HEIGHT;
+        anchorRect.bottom + HOME_SECTION_GAP + INLINE_BUTTON_HEIGHT;
       const inlineMostlyScrolledAway = inlineBlockBottom < viewportHeight * 0.28;
 
-      setShowFloating(cardPastThird || inlineMostlyScrolledAway);
+      setShowFloating(anchorPastThird || inlineMostlyScrolledAway);
     }
 
     window.addEventListener("scroll", evaluate, { passive: true });
@@ -45,19 +45,23 @@ function useShowFloatingFab(calorieCardRef: RefObject<HTMLElement | null>) {
       window.removeEventListener("scroll", evaluate);
       window.removeEventListener("resize", evaluate);
     };
-  }, [calorieCardRef]);
+  }, [scrollAnchorRef]);
 
   return showFloating;
 }
 
 interface HomeLogActionsProps {
-  calorieCardRef: RefObject<HTMLElement | null>;
+  scrollAnchorRef: RefObject<HTMLDivElement | null>;
+  showFoodLogPrompts?: boolean;
 }
 
-export function HomeLogActions({ calorieCardRef }: HomeLogActionsProps) {
+export function HomeLogActions({
+  scrollAnchorRef,
+  showFoodLogPrompts = true,
+}: HomeLogActionsProps) {
   const centerButtonRef = useRef<HTMLButtonElement>(null);
-  const showFloating = useShowFloatingFab(calorieCardRef);
-  const quickAdd = useQuickAdd();
+  const showFloating = useShowFloatingFab(scrollAnchorRef);
+  const quickAdd = useQuickAdd({ includeMeal: showFoodLogPrompts });
   const { close } = quickAdd;
 
   useEffect(() => {
@@ -65,6 +69,7 @@ export function HomeLogActions({ calorieCardRef }: HomeLogActionsProps) {
   }, [showFloating, close]);
 
   const inlineHidden = showFloating;
+  const buttonLabel = showFoodLogPrompts ? "Log meal" : "Quick log";
 
   return (
     <>
@@ -90,6 +95,7 @@ export function HomeLogActions({ calorieCardRef }: HomeLogActionsProps) {
             menuId={quickAdd.menuId}
             onNavigate={quickAdd.handleNavigate}
             align="center"
+            includeMeal={showFoodLogPrompts}
           />
         ) : null}
 
@@ -125,7 +131,7 @@ export function HomeLogActions({ calorieCardRef }: HomeLogActionsProps) {
           <span aria-hidden="true" style={{ fontSize: "1rem", lineHeight: 1 }}>
             +
           </span>
-          Log meal
+          {buttonLabel}
         </button>
       </div>
 
@@ -136,6 +142,7 @@ export function HomeLogActions({ calorieCardRef }: HomeLogActionsProps) {
         onNavigate={quickAdd.handleNavigate}
         onClose={quickAdd.close}
         menuId={quickAdd.menuId}
+        includeMeal={showFoodLogPrompts}
       />
     </>
   );

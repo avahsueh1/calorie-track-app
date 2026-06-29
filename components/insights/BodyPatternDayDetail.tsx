@@ -1,11 +1,11 @@
 import Link from "next/link";
 import {
   Footprints,
-  NotebookPen,
   Pencil,
   Scale,
   Sparkles,
 } from "lucide-react";
+import { routes } from "../../lib/routes";
 import { CheckInSummaryView } from "../dashboard/CheckInSummaryView";
 import { AppCard } from "../ui/AppCard";
 import {
@@ -15,10 +15,16 @@ import {
 import { DailyNote } from "../ui/DailyNote";
 import { MetricRow, MetricRowSectionIcon } from "../ui/MetricRow";
 import { StatusPill } from "../ui/StatusPill";
+import type { DailyCheckIn } from "../../types";
+import {
+  hasCheckInContent,
+  normalizeDailyCheckIn,
+} from "../../lib/checkInHelpers";
+import type { MacroTargets } from "../../types/profile";
 import type { BodyPatternCalendarDay } from "../../types/wellness";
 import { insightsSans, insightsSerif } from "./theme";
+import { DayNotesSection } from "./DayNotesSection";
 import {
-  bodyPatternEntryToDailyCheckIn,
   CALENDAR_COLORS,
   formatActivityDetailLine,
   formatKcal,
@@ -36,9 +42,24 @@ interface BodyPatternDayDetailProps {
   cycleDay: number;
   phase: string;
   entry: BodyPatternCalendarDay | null;
+  storedCheckIn?: DailyCheckIn | null;
+  calorieTarget: number;
+  macroTargets: MacroTargets;
+  showCalorieSummary?: boolean;
+  showCycleContext?: boolean;
 }
 
-const NOT_LOGGED = "Not logged";
+function resolveDayCheckIn(
+  storedCheckIn: DailyCheckIn | null | undefined,
+): DailyCheckIn | null {
+  if (!storedCheckIn) {
+    return null;
+  }
+
+  const stored = normalizeDailyCheckIn(storedCheckIn);
+  return hasCheckInContent(stored) ? stored : null;
+}
+
 const ICON_OPACITY = 0.88;
 
 const editDayButtonStyle = {
@@ -61,10 +82,6 @@ const editDayButtonStyle = {
   boxSizing: "border-box",
 } as const;
 
-function hasLoggedCheckIn(entry: BodyPatternCalendarDay | null): entry is BodyPatternCalendarDay {
-  return entry !== null && entry.checkInCompleted;
-}
-
 function sectionTitleStyle() {
   return {
     margin: 0,
@@ -80,13 +97,19 @@ export function BodyPatternDayDetail({
   cycleDay,
   phase,
   entry,
+  storedCheckIn,
+  calorieTarget,
+  macroTargets,
+  showCalorieSummary = true,
+  showCycleContext = true,
 }: BodyPatternDayDetailProps) {
-  const stats = entry ? resolveDayEnergyStats(entry) : resolveEmptyDayEnergyStats();
-  const macros = resolveDayMacroSummary(entry);
-  const notesText = entry?.notes?.trim();
+  const stats = entry
+    ? resolveDayEnergyStats(entry, calorieTarget)
+    : resolveEmptyDayEnergyStats(calorieTarget);
+  const macros = resolveDayMacroSummary(entry, macroTargets);
   const phaseKind = getPhaseKind(phase);
   const phaseTheme = PHASE_THEME[phaseKind];
-  const checkInLogged = hasLoggedCheckIn(entry);
+  const dayCheckIn = resolveDayCheckIn(storedCheckIn);
 
   const activities = entry?.activities ?? [];
   const hasActivities = activities.length > 0;
@@ -148,13 +171,15 @@ export function BodyPatternDayDetail({
         <div
           style={{
             marginTop: "10px",
-            display: "flex",
+            display: showCycleContext ? "flex" : "none",
             flexWrap: "wrap",
             alignItems: "center",
             gap: "8px",
           }}
         >
-          <StatusPill
+          {showCycleContext && phase ? (
+            <>
+              <StatusPill
             tone="neutral"
             style={{
               padding: "5px 11px",
@@ -176,6 +201,8 @@ export function BodyPatternDayDetail({
           >
             Cycle day {cycleDay}
           </span>
+            </>
+          ) : null}
         </div>
       </header>
 
@@ -188,10 +215,12 @@ export function BodyPatternDayDetail({
           backgroundColor: CALENDAR_COLORS.white,
           borderColor: CALENDAR_COLORS.border,
           fontFamily: insightsSans,
-          textAlign: "center",
+          textAlign: showCalorieSummary ? "center" : "left",
           boxSizing: "border-box",
         }}
       >
+        {showCalorieSummary ? (
+          <>
         <p
           style={{
             margin: 0,
@@ -223,30 +252,38 @@ export function BodyPatternDayDetail({
         <div style={{ marginTop: "14px", textAlign: "left" }}>
           <MacroStatGrid macros={macros} />
         </div>
-      </AppCard>
+          </>
+        ) : null}
 
-      <AppCard
-        shadow
-        padding="18px"
-        style={{
-          width: "100%",
-          borderRadius: "22px",
-          backgroundColor: CALENDAR_COLORS.white,
-          borderColor: CALENDAR_COLORS.border,
-          fontFamily: insightsSans,
-          boxSizing: "border-box",
-        }}
-      >
-        <h2 style={sectionTitleStyle()}>Today&apos;s check-in</h2>
-        {checkInLogged && entry ? (
-          <div style={{ marginTop: "12px" }}>
-            <CheckInSummaryView saved={bodyPatternEntryToDailyCheckIn(entry)} />
-          </div>
-        ) : (
-          <DailyNote variant="empty" style={{ marginTop: "12px" }}>
-            {NOT_LOGGED} for this day yet.
-          </DailyNote>
-        )}
+        <div
+          style={{
+            marginTop: showCalorieSummary ? "18px" : 0,
+            paddingTop: showCalorieSummary ? "16px" : 0,
+            borderTop: showCalorieSummary
+              ? `1px solid ${CALENDAR_COLORS.border}`
+              : "none",
+            textAlign: "left",
+          }}
+        >
+          <h2
+            style={{
+              ...sectionTitleStyle(),
+              marginBottom: "12px",
+              fontSize: "0.72rem",
+              fontWeight: 600,
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+              color: CALENDAR_COLORS.secondary,
+            }}
+          >
+            Symptoms logged
+          </h2>
+          {dayCheckIn ? (
+            <CheckInSummaryView saved={dayCheckIn} />
+          ) : (
+            <DailyNote variant="empty">No symptoms logged yet.</DailyNote>
+          )}
+        </div>
       </AppCard>
 
       <AppCard
@@ -345,30 +382,9 @@ export function BodyPatternDayDetail({
         )}
       </AppCard>
 
-      <AppCard
-        shadow
-        padding="16px 18px"
-        style={{
-          width: "100%",
-          borderRadius: "22px",
-          backgroundColor: CALENDAR_COLORS.white,
-          borderColor: CALENDAR_COLORS.border,
-          fontFamily: insightsSans,
-          boxSizing: "border-box",
-        }}
-      >
-        <DailyNote
-          variant="note"
-          icon={NotebookPen}
-          bodyStyle={{
-            color: notesText ? CALENDAR_COLORS.text : CALENDAR_COLORS.secondary,
-          }}
-        >
-          {notesText || "No notes yet."}
-        </DailyNote>
-      </AppCard>
+      <DayNotesSection dateKey={dateKey} entry={entry} />
 
-      <Link href="/log" style={editDayButtonStyle}>
+      <Link href={routes.log} style={editDayButtonStyle}>
         <Pencil size={16} strokeWidth={1.75} aria-hidden />
         Edit Day
       </Link>

@@ -1,4 +1,4 @@
-import { colors, labelStyle, sans } from "../../lib/theme";
+import { colors, labelStyle, layout, sans, stackStyle } from "../../lib/theme";
 
 export function fieldLabel(text: string) {
   return { ...labelStyle(), marginBottom: "6px", display: "block" as const };
@@ -91,6 +91,10 @@ export function textActionStyle() {
 
 export function cardSectionStyle() {
   return {
-    padding: "16px",
+    padding: layout.cardPaddingCompact,
   };
+}
+
+export function logTabStackStyle() {
+  return stackStyle(layout.cardGap);
 }

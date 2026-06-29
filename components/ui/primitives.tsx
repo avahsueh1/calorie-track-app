@@ -37,6 +37,8 @@ export type { DailyNoteVariant } from "./DailyNote";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "pill";
 
+const fullWidthButtonStyle: CSSProperties = { width: "100%" };
+
 export function AppButton({
   children,
   variant = "primary",
@@ -93,6 +95,30 @@ export function AppButton({
     >
       {children}
     </button>
+  );
+}
+
+export function PrimaryButton({
+  style,
+  ...props
+}: {
+  children: ReactNode;
+  style?: CSSProperties;
+} & ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <AppButton variant="primary" style={{ ...fullWidthButtonStyle, ...style }} {...props} />
+  );
+}
+
+export function OutlineButton({
+  style,
+  ...props
+}: {
+  children: ReactNode;
+  style?: CSSProperties;
+} & ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <AppButton variant="secondary" style={{ ...fullWidthButtonStyle, ...style }} {...props} />
   );
 }
 

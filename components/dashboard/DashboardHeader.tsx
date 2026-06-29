@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CycleContextDisplay, WellnessUser } from "../../types/wellness";
+import { routes } from "../../lib/routes";
 import { colors, sans, serif } from "./theme";
 
 function getGreeting(): string {
@@ -64,9 +65,15 @@ interface DashboardHeaderProps {
   user: WellnessUser;
   cycle: CycleContextDisplay;
   userInitial: string;
+  showCycleContext?: boolean;
 }
 
-export function DashboardHeader({ user, cycle, userInitial }: DashboardHeaderProps) {
+export function DashboardHeader({
+  user,
+  cycle,
+  userInitial,
+  showCycleContext = true,
+}: DashboardHeaderProps) {
   return (
     <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
       <div
@@ -110,7 +117,7 @@ export function DashboardHeader({ user, cycle, userInitial }: DashboardHeaderPro
         </div>
 
         <Link
-          href="/profile"
+          href={routes.profile}
           aria-label="Go to profile"
           style={{
             width: "40px",
@@ -165,13 +172,15 @@ export function DashboardHeader({ user, cycle, userInitial }: DashboardHeaderPro
             justifyContent: "flex-end",
           }}
         >
-          {cycle.cycleDayLabel ? (
+          {showCycleContext && cycle.cycleDayLabel ? (
             <span style={pillStyle("neutral")}>{cycle.cycleDayLabel}</span>
           ) : null}
-          <span style={pillStyle("terracotta")}>
-            <span aria-hidden="true">◐</span>
-            {cycle.phaseLabel}
-          </span>
+          {showCycleContext && cycle.phaseLabel && cycle.phaseLabel !== "Cycle tracking off" ? (
+            <span style={pillStyle("terracotta")}>
+              <span aria-hidden="true">◐</span>
+              {cycle.phaseLabel}
+            </span>
+          ) : null}
         </div>
       </div>
 

@@ -6,30 +6,41 @@ import {
   formatHeightDisplay,
   formatWeightDisplay,
 } from "../lib/profileBody";
+import {
+  generateSuggestedNutritionPlan,
+  suggestedToNutritionPlan,
+} from "../lib/nutritionPlan";
 
-/** Default body values produce ~1,290 BMR and ~2,000 TDEE (moderate activity). */
-export const defaultAppProfile: AppProfile = {
+const baseProfileFields = {
   name: "Ava Hsueh",
   email: "avahsueh1@g.ucla.edu",
   age: 28,
-  sex: "female",
+  sex: "female" as const,
   heightCm: 165,
   weightKg: 56,
-  heightDisplay: formatHeightDisplay(165, "imperial"),
-  weightDisplay: formatWeightDisplay(56, "imperial"),
   bodyFatPct: 24,
-  activityLevel: "moderate",
-  goalDirection: "maintain",
-  dailyTargetMode: "maintain",
+  activityLevel: "moderate" as const,
+  goalDirection: "maintain" as const,
+  goalRate: "moderate" as const,
   cycleTrackingEnabled: true,
-  lifeStage: "regular_cycle",
+  lifeStage: "regular_cycle" as const,
   lastPeriodStart: "2026-05-28",
   averageCycleLength: 28,
   averagePeriodLength: 5,
-  units: "imperial",
-  calorieDisplay: "net",
+  units: "imperial" as const,
+  calorieDisplay: "net" as const,
   checkInReminder: true,
   mealLogReminder: false,
+};
+
+/** Default body values produce ~1,290 BMR and ~2,000 TDEE (moderate activity). */
+export const defaultAppProfile: AppProfile = {
+  ...baseProfileFields,
+  heightDisplay: formatHeightDisplay(165, "imperial"),
+  weightDisplay: formatWeightDisplay(56, "imperial"),
+  nutritionPlan: suggestedToNutritionPlan(
+    generateSuggestedNutritionPlan(baseProfileFields),
+  ),
 };
 
 export function getDefaultAppProfile(): AppProfile {
@@ -56,6 +67,8 @@ export function getProfileInitial(name: string): string {
 export function getProfileFocusMessage(goalDirection: GoalDirection): string {
   switch (goalDirection) {
     case "gentle_fat_loss":
+      return "Focus on steady nourishment";
+    case "fat_loss":
       return "Focus on steady nourishment";
     case "build_muscle":
       return "Focus on protein and recovery";

@@ -1,5 +1,9 @@
 export type Sex = "male" | "female";
 
+export type { ActivityType, DetailedActivityProfile } from "./activity";
+
+import type { DetailedActivityProfile } from "./activity";
+
 export type ActivityLevel =
   | "sedentary"
   | "light"
@@ -14,6 +18,8 @@ export interface UserProfile {
   weightKg: number;
   bodyFatPct?: number;
   activityLevel: ActivityLevel;
+  /** Optional detailed activity inputs for a more specific TDEE estimate. */
+  detailedActivityProfile?: DetailedActivityProfile;
 }
 
 export interface FoodLogInput {
@@ -35,15 +41,53 @@ export interface DailySummary {
   remainingCalories: number;
 }
 
+export type SymptomSeverity = "mild" | "moderate" | "strong";
+
+export interface SymptomEntry {
+  selection: string;
+  note?: string;
+}
+
+export type SymptomKey =
+  | "bloating"
+  | "cramps"
+  | "breastSoreness"
+  | "headache"
+  | "acne"
+  | "backPain"
+  | "nausea"
+  | "discharge"
+  | "fatigue"
+  | "anxiety"
+  | "stress"
+  | "sadness"
+  | "depression"
+  | "irritability"
+  | "moodSwings"
+  | "lowMotivation"
+  | "brainFog"
+  | "energy"
+  | "sleepQuality"
+  | "appetite"
+  | "exercise"
+  | "cravings"
+  | "hydration";
+
 export interface DailyCheckIn {
-  energy: 1 | 2 | 3 | 4 | 5;
-  mood: 1 | 2 | 3 | 4 | 5;
-  hunger: 1 | 2 | 3 | 4 | 5;
-  cravings: "none" | "mild" | "strong";
-  sleepQuality: 1 | 2 | 3 | 4 | 5;
-  stress: 1 | 2 | 3 | 4 | 5;
-  bloating: "none" | "mild" | "strong";
-  soreness: "none" | "mild" | "strong";
+  symptoms: Partial<Record<SymptomKey, SymptomEntry>>;
+  notes?: string;
+}
+
+/** Pre-symptom-logger shape kept for migration from storage and sample data. */
+export interface LegacyDailyCheckIn {
+  energy?: 1 | 2 | 3 | 4 | 5;
+  mood?: 1 | 2 | 3 | 4 | 5;
+  hunger?: 1 | 2 | 3 | 4 | 5;
+  cravings?: "none" | "mild" | "strong";
+  sleepQuality?: 1 | 2 | 3 | 4 | 5;
+  stress?: 1 | 2 | 3 | 4 | 5;
+  bloating?: "none" | "mild" | "strong";
+  soreness?: "none" | "mild" | "strong";
   notes?: string;
 }
 

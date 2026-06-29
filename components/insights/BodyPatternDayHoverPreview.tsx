@@ -1,42 +1,35 @@
-import type { BodyPatternCalendarDay } from "../../types/wellness";
-import { insightsSans } from "./theme";
 import {
   CALENDAR_COLORS,
-  energyLabel,
   formatFullDate,
   formatKcal,
-  moodLabel,
-  resolveDayEnergyStats,
+  NUTRITION_STATUS_LABELS,
+  type NutritionDayStatus,
 } from "./bodyPatternCalendarUtils";
+import { insightsSans } from "./theme";
 
 interface BodyPatternDayHoverPreviewProps {
-  entry: BodyPatternCalendarDay;
-}
-
-function PreviewRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        gap: "10px",
-        fontSize: "0.68rem",
-        lineHeight: 1.35,
-        fontFamily: insightsSans,
-      }}
-    >
-      <span style={{ color: CALENDAR_COLORS.secondary }}>{label}</span>
-      <span style={{ color: CALENDAR_COLORS.text, fontWeight: 600, textAlign: "right" }}>
-        {value}
-      </span>
-    </div>
-  );
+  dateKey: string;
+  variant: "cycle" | "nutrition";
+  cycleDay?: number;
+  phase?: string;
+  nutritionStatus?: NutritionDayStatus;
+  netCalories?: number | null;
+  calorieTarget?: number;
 }
 
 export function BodyPatternDayHoverPreview({
-  entry,
+  dateKey,
+  variant,
+  cycleDay = 0,
+  phase = "",
+  nutritionStatus = "noData",
+  netCalories = null,
+  calorieTarget = 0,
 }: BodyPatternDayHoverPreviewProps) {
-  const stats = resolveDayEnergyStats(entry);
+  const nutritionDetail =
+    nutritionStatus === "noData"
+      ? "No food logged"
+      : `${formatKcal(netCalories ?? 0)} kcal net · target ${formatKcal(calorieTarget)}`;
 
   return (
     <div
@@ -54,7 +47,7 @@ export function BodyPatternDayHoverPreview({
     >
       <p
         style={{
-          margin: "0 0 2px",
+          margin: 0,
           fontSize: "0.72rem",
           fontWeight: 600,
           color: CALENDAR_COLORS.text,
@@ -62,23 +55,21 @@ export function BodyPatternDayHoverPreview({
           lineHeight: 1.3,
         }}
       >
-        {formatFullDate(entry.dateKey)}
+        {formatFullDate(dateKey)}
       </p>
       <p
         style={{
-          margin: "0 0 8px",
+          margin: "4px 0 0",
           fontSize: "0.62rem",
           color: CALENDAR_COLORS.secondary,
           fontFamily: insightsSans,
+          lineHeight: 1.4,
         }}
       >
-        Cycle day {entry.cycleDay} · {entry.phase}
+        {variant === "cycle"
+          ? `Cycle day ${cycleDay} · ${phase}`
+          : `${NUTRITION_STATUS_LABELS[nutritionStatus]} · ${nutritionDetail}`}
       </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-        <PreviewRow label="Net calories" value={`${formatKcal(stats.net)} kcal`} />
-        <PreviewRow label="Mood" value={moodLabel(entry)} />
-        <PreviewRow label="Energy" value={energyLabel(entry)} />
-      </div>
     </div>
   );
 }

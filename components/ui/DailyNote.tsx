@@ -10,7 +10,7 @@ const variantStyles: Record<
 > = {
   summary: {
     container: {
-      margin: "0 0 12px",
+      margin: 0,
       padding: "10px 14px",
       borderRadius: "12px",
       backgroundColor: "#F5EEE8",
@@ -125,7 +125,7 @@ export function DailyNote({
   const resolvedLabel =
     label ??
     (variant === "summary"
-      ? "Daily note"
+      ? "Daily reminder"
       : variant === "note" || variant === "savedNotes"
         ? "Notes"
         : undefined);
@@ -162,12 +162,14 @@ export function InsightCallout({
   title,
   icon,
   tone = "terracotta",
+  variant = "default",
   style,
 }: {
   children: ReactNode;
   title: string;
   icon?: ReactNode;
-  tone?: "terracotta" | "lavender";
+  tone?: "terracotta" | "lavender" | "cream" | "blue";
+  variant?: "default" | "compact";
   style?: CSSProperties;
 }) {
   const toneStyles =
@@ -175,19 +177,37 @@ export function InsightCallout({
       ? {
           backgroundColor: colors.lavenderPale,
           borderColor: `${colors.lavender}55`,
+          bodyColor: colors.muted,
         }
-      : {
-          backgroundColor: colors.terracottaPale,
-          borderColor: colors.terracottaLight,
-        };
+      : tone === "blue"
+        ? {
+            backgroundColor: "#EAF2FA",
+            borderColor: "#C8DAEA",
+            bodyColor: colors.muted,
+          }
+        : tone === "cream"
+          ? {
+              backgroundColor: "#F7EFE8",
+              borderColor: "#E6D7CB",
+              bodyColor: colors.text,
+            }
+          : {
+              backgroundColor: colors.terracottaPale,
+              borderColor: colors.terracottaLight,
+              bodyColor: colors.text,
+            };
+
+  const compact = variant === "compact";
 
   return (
     <div
       style={{
-        padding: "16px",
-        borderRadius: "24px",
+        padding: compact ? "10px 14px" : "16px",
+        borderRadius: compact ? "12px" : "24px",
         border: `1px solid ${toneStyles.borderColor}`,
         backgroundColor: toneStyles.backgroundColor,
+        width: "100%",
+        boxSizing: "border-box",
         ...style,
       }}
     >
@@ -195,23 +215,28 @@ export function InsightCallout({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: icon ? "8px" : undefined,
-          marginBottom: "8px",
+          gap: compact ? "6px" : icon ? "8px" : undefined,
+          marginBottom: compact ? "4px" : "8px",
         }}
       >
         {icon ? (
-          <span style={{ fontSize: "0.95rem", lineHeight: 1 }} aria-hidden>
+          <span
+            style={{ fontSize: compact ? "0.8rem" : "0.95rem", lineHeight: 1 }}
+            aria-hidden
+          >
             {icon}
           </span>
         ) : null}
         <h2
           style={{
             margin: 0,
-            fontSize: "0.88rem",
+            fontSize: compact ? "0.625rem" : "0.88rem",
             fontWeight: 600,
             fontFamily: sans,
-            color: colors.text,
-            letterSpacing: "-0.01em",
+            color: compact ? "#4A3D36" : colors.text,
+            letterSpacing: compact ? "0.08em" : "-0.01em",
+            textTransform: compact ? "uppercase" : "none",
+            lineHeight: 1.15,
           }}
         >
           {title}
@@ -220,9 +245,9 @@ export function InsightCallout({
       <p
         style={{
           margin: 0,
-          fontSize: "0.82rem",
-          lineHeight: 1.55,
-          color: tone === "lavender" ? colors.muted : colors.text,
+          fontSize: compact ? "0.8125rem" : "0.82rem",
+          lineHeight: compact ? 1.4 : 1.55,
+          color: toneStyles.bodyColor,
           fontFamily: sans,
         }}
       >

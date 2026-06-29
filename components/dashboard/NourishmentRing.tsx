@@ -11,9 +11,9 @@ const RING_SIZE = 240;
 const RING_INNER = 188;
 const STROKE_WIDTH = 15;
 const RING_BASE = "#EDE7DF";
-const RING_GRADIENT_START = "#E8B8A8";
-const RING_GRADIENT_END = "#CE9482";
-const PEACH_ACCENT = "#D9A389";
+const RING_GRADIENT_START = "#DFA899";
+const RING_GRADIENT_END = "#C48672";
+const PEACH_ACCENT = "#CF9578";
 
 function RingSunriseBackdrop() {
   return (

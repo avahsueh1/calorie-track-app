@@ -6,18 +6,19 @@ import { AppShell } from "../../components/ui/AppShell";
 import {
   useCycleContext,
   useDailyLog,
-  useWeightLogs,
+  useProfile,
+  useTrackingPreferences,
 } from "../../components/providers/AppStateProvider";
+import { useProgressJournal } from "../../components/providers/useProgressJournal";
 import { ActivityTab } from "../../components/log/ActivityTab";
 import { CheckInTab } from "../../components/log/CheckInTab";
+import { CycleJournalTab } from "../../components/log/CycleJournalTab";
 import { FoodTab } from "../../components/log/FoodTab";
 import { LogHeaderSummary } from "../../components/log/LogHeaderSummary";
-import {
-  LogTabNav,
-  parseLogTabParam,
-  type LogTab,
-} from "../../components/log/LogTabNav";
-import { WeightTab } from "../../components/log/WeightTab";
+import { LogTabNav } from "../../components/log/LogTabNav";
+import { ProgressJournalCard } from "../../components/progress/ProgressJournalCard";
+import { resolveLogTab } from "../../lib/trackingPreferences";
+import type { LogTab } from "../../lib/trackingPreferences";
 
 function formatDateLabel(): string {
   return new Date().toLocaleDateString("en-US", {
@@ -30,14 +31,27 @@ function formatDateLabel(): string {
 function LogPageContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState<LogTab>(() => parseLogTabParam(tabParam));
+  const {
+    trackingPreferences,
+    calorieTrackingEnabled,
+    cycleTrackingEnabled,
+  } = useTrackingPreferences();
+  const [activeTab, setActiveTab] = useState<LogTab>(() =>
+    resolveLogTab(tabParam, trackingPreferences),
+  );
   const { dailySummary } = useDailyLog();
   const { cycleContext } = useCycleContext();
-  const { weightLogs, addWeightLog } = useWeightLogs();
+  const { profile } = useProfile();
+  const {
+    progressJournal,
+    progressJournalByDate,
+    upsertProgressJournal,
+    removeProgressJournal,
+  } = useProgressJournal();
 
   useEffect(() => {
-    setActiveTab(parseLogTabParam(tabParam));
-  }, [tabParam]);
+    setActiveTab(resolveLogTab(tabParam, trackingPreferences));
+  }, [tabParam, trackingPreferences]);
 
   return (
     <>
@@ -46,16 +60,31 @@ function LogPageContent() {
         phaseLabel={cycleContext.phaseLabel}
         cycleDayLabel={cycleContext.cycleDayLabel}
         summary={dailySummary}
+        showCalorieSummary={calorieTrackingEnabled}
+        showCycleContext={cycleTrackingEnabled}
       />
 
-      <LogTabNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <LogTabNav
+        activeTab={activeTab}
+        trackingPreferences={trackingPreferences}
+        onTabChange={setActiveTab}
+      />
 
-      {activeTab === "food" && <FoodTab />}
-      {activeTab === "activity" && <ActivityTab />}
-      {activeTab === "check-in" && <CheckInTab />}
-      {activeTab === "weight" && (
-        <WeightTab entries={weightLogs} onSaveWeight={addWeightLog} />
-      )}
+      {activeTab === "food" && calorieTrackingEnabled ? <FoodTab /> : null}
+      {activeTab === "activity" && calorieTrackingEnabled ? <ActivityTab /> : null}
+      {activeTab === "check-in" ? <CheckInTab /> : null}
+      {activeTab === "progress-journal" && calorieTrackingEnabled ? (
+        <ProgressJournalCard
+          journalByDate={progressJournalByDate}
+          entries={progressJournal}
+          units={profile.units}
+          onSave={upsertProgressJournal}
+          onRemove={removeProgressJournal}
+        />
+      ) : null}
+      {activeTab === "cycle-journal" && cycleTrackingEnabled ? (
+        <CycleJournalTab />
+      ) : null}
     </>
   );
 }

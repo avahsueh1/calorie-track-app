@@ -4,20 +4,17 @@ import { useState } from "react";
 import { useDailyLog } from "../providers/DailyLogProvider";
 import type { DailyFoodEntry, MealType } from "../../types/wellness";
 import {
-  cardStyle,
   colors,
   formatNumber,
   labelStyle,
   sans,
   sectionTitleStyle,
 } from "../dashboard/theme";
+import { AppButton, AppCard, DailyNote, OutlineButton, PrimaryButton } from "../ui/primitives";
 import {
-  cardSectionStyle,
-  dangerButtonStyle,
   fieldLabel,
   inputStyle,
-  primaryButtonStyle,
-  secondaryButtonStyle,
+  logTabStackStyle,
   selectStyle,
   textActionStyle,
 } from "./shared";
@@ -148,8 +145,8 @@ export function FoodTab() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      <section style={{ ...cardStyle(), ...cardSectionStyle() }}>
+    <div style={logTabStackStyle()}>
+      <AppCard padding="compact">
         <h2 style={{ ...sectionTitleStyle(), marginBottom: "14px" }}>
           Add food
         </h2>
@@ -263,13 +260,11 @@ export function FoodTab() {
               {error}
             </p>
           )}
-          <button type="submit" style={primaryButtonStyle()}>
-            Add Food
-          </button>
+          <PrimaryButton type="submit">Add Food</PrimaryButton>
         </form>
-      </section>
+      </AppCard>
 
-      <section style={{ ...cardStyle(), ...cardSectionStyle() }}>
+      <AppCard padding="compact">
         <h2 style={{ ...sectionTitleStyle(), marginBottom: "14px" }}>
           Today&apos;s food
         </h2>
@@ -282,18 +277,16 @@ export function FoodTab() {
             >
               <p style={{ ...labelStyle(), marginBottom: "8px" }}>{mealGroup}</p>
               {items.length === 0 ? (
-                <p
-                  style={{
-                    margin: 0,
+                <DailyNote
+                  variant="empty"
+                  bodyStyle={{
                     fontSize: "0.78rem",
-                    color: colors.muted,
-                    fontFamily: sans,
                     fontStyle: "italic",
                     padding: "8px 0",
                   }}
                 >
                   No {mealGroup.toLowerCase()} logged yet.
-                </p>
+                </DailyNote>
               ) : (
                 <ul
                   style={{
@@ -306,15 +299,8 @@ export function FoodTab() {
                   }}
                 >
                   {items.map((item) => (
-                    <li
-                      key={item.id}
-                      style={{
-                        backgroundColor: colors.shell,
-                        borderRadius: "12px",
-                        padding: "10px 12px",
-                        border: `1px solid ${colors.border}`,
-                      }}
-                    >
+                    <li key={item.id}>
+                      <AppCard variant="soft" padding="10px 12px">
                       {editingId === item.id ? (
                         <form
                           onSubmit={handleSaveEdit}
@@ -486,24 +472,19 @@ export function FoodTab() {
                               gap: "8px",
                             }}
                           >
-                            <button type="submit" style={primaryButtonStyle()}>
-                              Save changes
-                            </button>
-                            <button
-                              type="button"
-                              style={secondaryButtonStyle()}
-                              onClick={cancelEditing}
-                            >
+                            <PrimaryButton type="submit">Save changes</PrimaryButton>
+                            <OutlineButton type="button" onClick={cancelEditing}>
                               Cancel
-                            </button>
+                            </OutlineButton>
                           </div>
-                          <button
+                          <AppButton
                             type="button"
-                            style={dangerButtonStyle()}
+                            variant="ghost"
+                            style={{ width: "100%" }}
                             onClick={() => handleDelete(item.id)}
                           >
                             Delete
-                          </button>
+                          </AppButton>
                         </form>
                       ) : (
                         <>
@@ -563,6 +544,7 @@ export function FoodTab() {
                           </button>
                         </>
                       )}
+                      </AppCard>
                     </li>
                   ))}
                 </ul>
@@ -570,7 +552,7 @@ export function FoodTab() {
             </div>
           );
         })}
-      </section>
+      </AppCard>
     </div>
   );
 }

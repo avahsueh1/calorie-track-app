@@ -27,12 +27,10 @@ const lifeStageOptions: { id: ProfileLifeStage; label: string }[] = [
 interface CycleLifeStageCardProps {
   cycleTrackingEnabled: boolean;
   lifeStage: ProfileLifeStage;
-  lastPeriodStart: string;
   averageCycleLength: string;
   averagePeriodLength: string;
   onCycleTrackingChange: (enabled: boolean) => void;
   onLifeStageChange: (value: ProfileLifeStage) => void;
-  onLastPeriodStartChange: (value: string) => void;
   onAverageCycleLengthChange: (value: string) => void;
   onAveragePeriodLengthChange: (value: string) => void;
 }
@@ -40,12 +38,10 @@ interface CycleLifeStageCardProps {
 export function CycleLifeStageCard({
   cycleTrackingEnabled,
   lifeStage,
-  lastPeriodStart,
   averageCycleLength,
   averagePeriodLength,
   onCycleTrackingChange,
   onLifeStageChange,
-  onLastPeriodStartChange,
   onAverageCycleLengthChange,
   onAveragePeriodLengthChange,
 }: CycleLifeStageCardProps) {
@@ -143,19 +139,6 @@ export function CycleLifeStageCard({
           opacity: cycleTrackingEnabled ? 1 : 0.55,
         }}
       >
-        <div>
-          <label style={profileFieldLabel("Last period start")} htmlFor="last-period">
-            Last period start date
-          </label>
-          <input
-            id="last-period"
-            type="date"
-            value={lastPeriodStart}
-            onChange={(e) => onLastPeriodStartChange(e.target.value)}
-            disabled={!cycleTrackingEnabled}
-            style={profileInputStyle}
-          />
-        </div>
         <div
           style={{
             display: "grid",
@@ -164,8 +147,8 @@ export function CycleLifeStageCard({
           }}
         >
           <div>
-            <label style={profileFieldLabel("Avg cycle length")} htmlFor="cycle-length">
-              Average cycle length
+            <label style={profileFieldLabel("Default avg cycle")} htmlFor="cycle-length">
+              Default average cycle length
             </label>
             <input
               id="cycle-length"
@@ -179,8 +162,8 @@ export function CycleLifeStageCard({
             />
           </div>
           <div>
-            <label style={profileFieldLabel("Avg period length")} htmlFor="period-length">
-              Average period length
+            <label style={profileFieldLabel("Default avg period")} htmlFor="period-length">
+              Default average period length
             </label>
             <input
               id="period-length"
@@ -205,7 +188,8 @@ export function CycleLifeStageCard({
           fontSize: "0.75rem",
         }}
       >
-        Used to add context to energy, hunger, cravings, and weight patterns.
+        Used as defaults until period dates are logged in Cycle Journal. Log
+        periods on the Log page to refine cycle context.
       </p>
     </section>
   );

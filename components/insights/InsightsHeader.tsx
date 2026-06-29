@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   insightsColors,
   insightsNoteStyle,
@@ -7,12 +8,20 @@ import {
   insightsSubtitleStyle,
 } from "./theme";
 import { useCycleContext } from "../providers/AppStateProvider";
+import { routes } from "../../lib/routes";
+import { OutlineButton } from "../ui/primitives";
 
 interface InsightsHeaderProps {
   loggedDaysCount: number;
+  showCycleContext?: boolean;
+  showGenerateReport?: boolean;
 }
 
-export function InsightsHeader({ loggedDaysCount }: InsightsHeaderProps) {
+export function InsightsHeader({
+  loggedDaysCount,
+  showCycleContext = true,
+  showGenerateReport = true,
+}: InsightsHeaderProps) {
   const { cycleContext } = useCycleContext();
   const cycleContextLabel = [
     cycleContext.cycleDayLabel,
@@ -36,7 +45,7 @@ export function InsightsHeader({ loggedDaysCount }: InsightsHeaderProps) {
         Insights
       </h1>
       <p style={insightsSubtitleStyle()}>This week</p>
-      {cycleContextLabel ? (
+      {showCycleContext && cycleContextLabel ? (
         <p
           style={{
             ...insightsSubtitleStyle(),
@@ -52,6 +61,18 @@ export function InsightsHeader({ loggedDaysCount }: InsightsHeaderProps) {
           ? "Log more days to unlock stronger patterns."
           : `${loggedDaysCount} logged days in your local history.`}
       </p>
+      {showGenerateReport ? (
+        <Link
+          href={routes.healthReport}
+          style={{
+            display: "block",
+            marginTop: "14px",
+            textDecoration: "none",
+          }}
+        >
+          <OutlineButton type="button">Generate Report</OutlineButton>
+        </Link>
+      ) : null}
     </header>
   );
 }

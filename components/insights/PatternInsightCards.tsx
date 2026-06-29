@@ -1,51 +1,20 @@
 import type { PatternInsightCardData } from "../../types/wellness";
-import { AppCard } from "../ui/AppCard";
-import {
-  insightsColors,
-  insightsSans,
-  insightsSectionTitleStyle,
-} from "./theme";
-
-const accentBackground: Record<PatternInsightCardData["accent"], string> = {
-  cream: "#F7EFE8",
-  lavender: insightsColors.lavenderBg,
-  blue: insightsColors.blueBg,
-};
+import { spacing } from "../../lib/theme";
+import { PatternInsightCard } from "./PatternInsightCard";
 
 interface PatternInsightCardsProps {
   cards: PatternInsightCardData[];
 }
 
 export function PatternInsightCards({ cards }: PatternInsightCardsProps) {
+  if (cards.length === 1) {
+    return <PatternInsightCard card={cards[0]} />;
+  }
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: spacing.block }}>
       {cards.map((card) => (
-        <AppCard
-          key={card.title}
-          shadow
-          style={{ backgroundColor: accentBackground[card.accent] }}
-        >
-          <h3
-            style={{
-              ...insightsSectionTitleStyle(),
-              fontSize: "0.85rem",
-              marginBottom: "6px",
-            }}
-          >
-            {card.title}
-          </h3>
-          <p
-            style={{
-              margin: 0,
-              fontSize: "0.78rem",
-              lineHeight: 1.5,
-              color: insightsColors.textSecondary,
-              fontFamily: insightsSans,
-            }}
-          >
-            {card.message}
-          </p>
-        </AppCard>
+        <PatternInsightCard key={card.title} card={card} />
       ))}
     </div>
   );

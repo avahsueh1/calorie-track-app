@@ -42,11 +42,7 @@ export const insightsPageOuterStyle = pageOuterStyle;
 export const insightsShellStyle = shellStyle;
 
 export function insightsMainStyle(overrides?: CSSProperties): CSSProperties {
-  return mainContentStyle({
-    gap: layout.cardGap,
-    paddingBottom: "24px",
-    ...overrides,
-  });
+  return mainContentStyle(overrides);
 }
 
 export function insightsCardStyle(): CSSProperties {
