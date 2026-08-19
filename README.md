@@ -38,12 +38,14 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Environment variables
 
-Create a `.env.local` file in Phase 2 with:
+Create a `.env.local` file with:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
+
+See [docs/SUPABASE.md](docs/SUPABASE.md) for full setup (database migration + 60+ seeded foods).
 
 ## Available scripts
 

@@ -53,11 +53,13 @@ function useShowFloatingFab(scrollAnchorRef: RefObject<HTMLDivElement | null>) {
 interface HomeLogActionsProps {
   scrollAnchorRef: RefObject<HTMLDivElement | null>;
   showFoodLogPrompts?: boolean;
+  variant?: "center" | "header";
 }
 
 export function HomeLogActions({
   scrollAnchorRef,
   showFoodLogPrompts = true,
+  variant = "center",
 }: HomeLogActionsProps) {
   const centerButtonRef = useRef<HTMLButtonElement>(null);
   const showFloating = useShowFloatingFab(scrollAnchorRef);
@@ -70,6 +72,7 @@ export function HomeLogActions({
 
   const inlineHidden = showFloating;
   const buttonLabel = showFoodLogPrompts ? "Log meal" : "Quick log";
+  const isHeader = variant === "header";
 
   return (
     <>
@@ -78,7 +81,7 @@ export function HomeLogActions({
         style={{
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
+          alignItems: isHeader ? "flex-end" : "center",
           margin: 0,
           maxHeight: inlineHidden ? 0 : INLINE_BLOCK_MAX_HEIGHT,
           overflow: "hidden",
@@ -113,7 +116,8 @@ export function HomeLogActions({
             alignItems: "center",
             justifyContent: "center",
             gap: "6px",
-            width: "190px",
+            width: isHeader ? "auto" : "190px",
+            padding: isHeader ? "0 18px" : undefined,
             height: `${INLINE_BUTTON_HEIGHT}px`,
             flexShrink: 0,
             borderRadius: "999px",

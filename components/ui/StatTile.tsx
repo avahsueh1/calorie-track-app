@@ -205,22 +205,22 @@ export function StatTileGrid({
   style,
   gap = "9px",
   supporting = false,
+  columns = 2,
 }: {
   children: ReactNode;
   style?: CSSProperties;
   gap?: string;
   supporting?: boolean;
+  columns?: 2 | 4;
 }) {
   return (
     <div
       className={supporting ? "stat-grid" : undefined}
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
         gap: supporting ? "8px" : gap,
         width: "100%",
-        maxWidth: supporting ? "200px" : undefined,
-        margin: supporting ? "0 auto" : undefined,
         ...style,
       }}
     >

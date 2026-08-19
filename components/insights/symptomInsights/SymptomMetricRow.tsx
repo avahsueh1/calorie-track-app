@@ -26,6 +26,7 @@ export interface SymptomMetricRowProps {
   iconStyle: PatternInsightIconStyle;
   barColor: string;
   compact?: boolean;
+  dense?: boolean;
 }
 
 export function SymptomMetricRow({
@@ -37,6 +38,7 @@ export function SymptomMetricRow({
   iconStyle,
   barColor,
   compact = false,
+  dense = false,
 }: SymptomMetricRowProps) {
   const barWidth = Math.max(8, Math.min(100, percent));
 
@@ -45,9 +47,9 @@ export function SymptomMetricRow({
       style={{
         display: "flex",
         alignItems: "flex-start",
-        gap: compact ? "10px" : "12px",
-        padding: compact ? "11px 12px" : "13px 14px",
-        borderRadius: compact ? "16px" : "18px",
+        gap: compact ? "8px" : "12px",
+        padding: dense ? "8px 10px" : compact ? "11px 12px" : "13px 14px",
+        borderRadius: dense ? "12px" : compact ? "16px" : "18px",
         backgroundColor: "#FFFDFB",
         border: "1px solid #E6D7CB",
       }}
@@ -56,24 +58,26 @@ export function SymptomMetricRow({
         icon={iconStyle.icon}
         backgroundColor={iconStyle.backgroundColor}
         color={iconStyle.color}
-        size={compact ? 32 : 36}
+        size={dense ? 28 : compact ? 32 : 36}
       />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ ...categoryLabelStyle, marginBottom: "4px" }}>{category}</p>
+        {!dense ? (
+          <p style={{ ...categoryLabelStyle, marginBottom: "4px" }}>{category}</p>
+        ) : null}
         <div
           style={{
             display: "flex",
             alignItems: "baseline",
             justifyContent: "space-between",
             gap: "10px",
-            marginBottom: "4px",
+            marginBottom: dense ? "6px" : "4px",
           }}
         >
           <p
             style={{
               margin: 0,
               fontFamily: insightsSans,
-              fontSize: compact ? "0.8125rem" : "0.875rem",
+              fontSize: dense ? "0.78rem" : compact ? "0.8125rem" : "0.875rem",
               fontWeight: 600,
               lineHeight: 1.35,
               color: insightsColors.text,
@@ -84,7 +88,7 @@ export function SymptomMetricRow({
           <span
             style={{
               fontFamily: insightsSans,
-              fontSize: compact ? "0.9375rem" : "1rem",
+              fontSize: dense ? "0.82rem" : compact ? "0.9375rem" : "1rem",
               fontWeight: 700,
               color: barColor,
               lineHeight: 1,
@@ -94,24 +98,26 @@ export function SymptomMetricRow({
             {percent}%
           </span>
         </div>
-        <p
-          style={{
-            margin: "0 0 8px",
-            fontFamily: insightsSans,
-            fontSize: "0.8125rem",
-            lineHeight: 1.45,
-            color: insightsColors.textSecondary,
-          }}
-        >
-          {body}
-        </p>
+        {!dense ? (
+          <p
+            style={{
+              margin: "0 0 8px",
+              fontFamily: insightsSans,
+              fontSize: "0.8125rem",
+              lineHeight: 1.45,
+              color: insightsColors.textSecondary,
+            }}
+          >
+            {body}
+          </p>
+        ) : null}
         <div
           style={{
-            height: "7px",
+            height: dense ? "5px" : "7px",
             borderRadius: "999px",
             backgroundColor: "#EFE5DD",
             overflow: "hidden",
-            marginBottom: "6px",
+            marginBottom: dense ? 0 : "6px",
           }}
         >
           <div
@@ -124,17 +130,19 @@ export function SymptomMetricRow({
             }}
           />
         </div>
-        <p
-          style={{
-            margin: 0,
-            fontFamily: insightsSans,
-            fontSize: "0.75rem",
-            lineHeight: 1.4,
-            color: insightsColors.textSecondary,
-          }}
-        >
-          {meta}
-        </p>
+        {!dense ? (
+          <p
+            style={{
+              margin: 0,
+              fontFamily: insightsSans,
+              fontSize: "0.75rem",
+              lineHeight: 1.4,
+              color: insightsColors.textSecondary,
+            }}
+          >
+            {meta}
+          </p>
+        ) : null}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   insightsColors,
   insightsNoteStyle,
-  insightsSerif,
+  insightsSans,
   insightsSubtitleStyle,
 } from "./theme";
 import { useCycleContext } from "../providers/AppStateProvider";
@@ -31,47 +31,47 @@ export function InsightsHeader({
     .join(" · ");
 
   return (
-    <header>
-      <h1
-        style={{
-          margin: "0 0 4px",
-          fontFamily: insightsSerif,
-          fontSize: "1.75rem",
-          fontWeight: 400,
-          color: insightsColors.text,
-          letterSpacing: "-0.02em",
-        }}
-      >
-        Insights
-      </h1>
-      <p style={insightsSubtitleStyle()}>This week</p>
-      {showCycleContext && cycleContextLabel ? (
+    <header className="insights-page-header">
+      <div className="insights-page-header-main">
+        <h1 className="insights-page-title">Insights</h1>
         <p
           style={{
             ...insightsSubtitleStyle(),
-            marginTop: "4px",
-            color: insightsColors.terracotta,
+            margin: "4px 0 0",
+            fontSize: "0.82rem",
+            color: insightsColors.text,
           }}
         >
-          {cycleContextLabel}
+          Your weekly health overview
         </p>
-      ) : null}
-      <p style={{ ...insightsNoteStyle(), marginTop: "10px" }}>
-        {loggedDaysCount < 3
-          ? "Log more days to unlock stronger patterns."
-          : `${loggedDaysCount} logged days in your local history.`}
-      </p>
+        {showCycleContext && cycleContextLabel ? (
+          <p
+            style={{
+              margin: "4px 0 0",
+              fontFamily: insightsSans,
+              fontSize: "0.78rem",
+              lineHeight: 1.4,
+              color: insightsColors.terracotta,
+            }}
+          >
+            {cycleContextLabel}
+          </p>
+        ) : null}
+        <p style={{ ...insightsNoteStyle(), marginTop: "4px" }}>
+          {loggedDaysCount < 3
+            ? "Log more days to unlock stronger patterns."
+            : `${loggedDaysCount} logged days in your local history.`}
+        </p>
+      </div>
+
       {showGenerateReport ? (
-        <Link
-          href={routes.healthReport}
-          style={{
-            display: "block",
-            marginTop: "14px",
-            textDecoration: "none",
-          }}
-        >
-          <OutlineButton type="button">Generate Report</OutlineButton>
-        </Link>
+        <div className="insights-page-header-actions">
+          <Link href={routes.healthReport} style={{ textDecoration: "none" }}>
+            <OutlineButton type="button" style={{ width: "auto" }}>
+              Generate Report
+            </OutlineButton>
+          </Link>
+        </div>
       ) : null}
     </header>
   );

@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "check:calories": "npx tsx lib/calorieFormulaChecks.ts"
+    "check:calories": "npx tsx lib/calorieFormulaChecks.ts",
+    "usda:import": "npx tsx scripts/import-usda-foods.ts",
+    "usda:download": "npx tsx scripts/import-usda-foods.ts --download-only --all"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
@@ -19,9 +21,12 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
+    "adm-zip": "^0.5.16",
+    "csv-parse": "^5.6.0",
     "eslint": "^9.27.0",
     "eslint-config-next": "^15.3.3",
     "typescript": "^5.8.3"

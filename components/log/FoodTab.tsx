@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { formatFoodDisplayName } from "../../lib/foods";
+import type { FoodSearchResult } from "../../types/database";
+import { FoodSearch } from "./FoodSearch";
 import { useDailyLog } from "../providers/DailyLogProvider";
 import type { DailyFoodEntry, MealType } from "../../types/wellness";
 import {
@@ -68,11 +71,22 @@ export function FoodTab() {
   const [protein, setProtein] = useState("");
   const [carbs, setCarbs] = useState("");
   const [fat, setFat] = useState("");
+  const [servingNote, setServingNote] = useState("");
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<FoodFormState>(emptyFoodForm());
   const [editCalories, setEditCalories] = useState("");
   const [editError, setEditError] = useState("");
+
+  function handleFoodSelect(food: FoodSearchResult) {
+    setName(formatFoodDisplayName(food.name));
+    setCalories(String(food.caloriesPerServing));
+    setProtein(String(food.proteinG || ""));
+    setCarbs(String(food.carbsG || ""));
+    setFat(String(food.fatG || ""));
+    setServingNote(food.servingUnit);
+    setError("");
+  }
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -100,6 +114,7 @@ export function FoodTab() {
     setProtein("");
     setCarbs("");
     setFat("");
+    setServingNote("");
   }
 
   function startEditing(item: DailyFoodEntry) {
@@ -150,6 +165,9 @@ export function FoodTab() {
         <h2 style={{ ...sectionTitleStyle(), marginBottom: "14px" }}>
           Add food
         </h2>
+        <div style={{ marginBottom: "16px" }}>
+          <FoodSearch onSelect={handleFoodSelect} />
+        </div>
         <form
           onSubmit={handleAdd}
           style={{ display: "flex", flexDirection: "column", gap: "12px" }}
@@ -167,6 +185,18 @@ export function FoodTab() {
               style={inputStyle}
             />
           </div>
+          {servingNote ? (
+            <p
+              style={{
+                margin: "-4px 0 0",
+                fontSize: "0.72rem",
+                color: colors.muted,
+                fontFamily: sans,
+              }}
+            >
+              Serving: {servingNote}
+            </p>
+          ) : null}
           <div>
             <label style={fieldLabel("Meal type")} htmlFor="meal-type">
               Meal type

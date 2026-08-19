@@ -13,33 +13,9 @@ import {
   QuickAddMenu,
   useQuickAdd,
 } from "./quickAddMenu";
-import { layout } from "./theme";
 
 const FAB_SIZE = 52;
 const FAB_COLOR = "#C58E7C";
-
-function useFabNearBottom() {
-  const [nearBottom, setNearBottom] = useState(false);
-
-  useEffect(() => {
-    function evaluate() {
-      const scrollBottom =
-        document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
-      setNearBottom(scrollBottom <= 2);
-    }
-
-    window.addEventListener("scroll", evaluate, { passive: true });
-    window.addEventListener("resize", evaluate);
-    evaluate();
-
-    return () => {
-      window.removeEventListener("scroll", evaluate);
-      window.removeEventListener("resize", evaluate);
-    };
-  }, []);
-
-  return nearBottom;
-}
 
 interface QuickAddFabProps {
   visible?: boolean;
@@ -72,7 +48,6 @@ export function QuickAddFab({
   const rootRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
   const scrollRaf = useRef<number | null>(null);
-  const nearBottom = useFabNearBottom();
 
   useEffect(() => {
     if (!open) {
@@ -137,7 +112,7 @@ export function QuickAddFab({
     }, 90);
   }, [toggle]);
 
-  const hiddenNearBottom = nearBottom && visible;
+  const hiddenNearBottom = false;
   const displayOpacity = visible
     ? hiddenNearBottom
       ? 0
@@ -165,12 +140,12 @@ export function QuickAddFab({
       className={hiddenNearBottom ? "quick-add-fab is-near-bottom" : "quick-add-fab"}
       style={{
         position: "fixed",
-        bottom: "calc(72px + 32px + env(safe-area-inset-bottom, 0px))",
-        left: 0,
-        right: 0,
-        maxWidth: layout.shellMaxWidth,
-        margin: "0 auto",
-        paddingRight: "20px",
+        bottom: "32px",
+        right: "32px",
+        left: "auto",
+        maxWidth: "none",
+        margin: 0,
+        paddingRight: 0,
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-end",

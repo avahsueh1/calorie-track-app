@@ -12,6 +12,8 @@ interface TopLoggedSymptomsProps {
   symptoms: SymptomFrequencyRow[];
   totalCheckInDays: number;
   embedded?: boolean;
+  compact?: boolean;
+  limit?: number;
   excludeSymptomKeys?: SymptomKey[];
   hideHeader?: boolean;
 }
@@ -20,13 +22,15 @@ export function TopLoggedSymptoms({
   symptoms,
   totalCheckInDays,
   embedded = false,
+  compact = false,
+  limit = 5,
   excludeSymptomKeys = [],
   hideHeader = false,
 }: TopLoggedSymptomsProps) {
   const filteredSymptoms = symptoms.filter(
     (symptom) => !excludeSymptomKeys.includes(symptom.key),
   );
-  const items = buildSymptomMetricItems(filteredSymptoms, totalCheckInDays, 5);
+  const items = buildSymptomMetricItems(filteredSymptoms, totalCheckInDays, limit);
 
   const content = (
     <>
@@ -53,7 +57,7 @@ export function TopLoggedSymptoms({
             : "No symptoms logged yet."}
         </p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: compact ? "6px" : "10px" }}>
           {items.map((item) => (
             <SymptomMetricRow
               key={item.id}
@@ -65,6 +69,8 @@ export function TopLoggedSymptoms({
               percent={item.percent}
               iconStyle={item.iconStyle}
               barColor={item.barColor}
+              compact={compact}
+              dense={compact}
             />
           ))}
         </div>

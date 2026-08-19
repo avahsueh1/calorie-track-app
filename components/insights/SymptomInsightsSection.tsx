@@ -7,6 +7,7 @@ import { buildSymptomInsightsData } from "../../lib/symptomInsights";
 import {
   insightsCardStyle,
   insightsColors,
+  insightsSans,
   insightsSerif,
   insightsSubtitleStyle,
 } from "./theme";
@@ -16,12 +17,14 @@ interface SymptomInsightsSectionProps {
   dailyCheckIns: Record<string, DailyCheckIn>;
   cycleSettings: CycleSettings;
   periodLogs: PeriodLog[];
+  compact?: boolean;
 }
 
 export function SymptomInsightsSection({
   dailyCheckIns,
   cycleSettings,
   periodLogs,
+  compact = false,
 }: SymptomInsightsSectionProps) {
   const data = useMemo(
     () =>
@@ -34,26 +37,39 @@ export function SymptomInsightsSection({
   );
 
   return (
-    <section style={insightsCardStyle()}>
-      <header style={{ marginBottom: "18px" }}>
+    <section
+      className="insights-panel"
+      style={{
+        ...insightsCardStyle(),
+        ...(compact
+          ? { padding: "16px 18px", overflow: "auto" as const }
+          : {}),
+      }}
+    >
+      <header style={{ marginBottom: compact ? "12px" : "18px" }}>
         <h2
           style={{
             margin: "0 0 6px",
-            fontFamily: insightsSerif,
-            fontSize: "1.2rem",
-            fontWeight: 400,
+            fontFamily: compact ? insightsSans : insightsSerif,
+            fontSize: compact ? "0.92rem" : "1.2rem",
+            fontWeight: compact ? 600 : 400,
             color: insightsColors.text,
-            letterSpacing: "-0.02em",
+            letterSpacing: compact ? undefined : "-0.02em",
           }}
         >
           Symptom Insights
         </h2>
         <p style={{ ...insightsSubtitleStyle(), margin: 0 }}>
-          Patterns from your check-ins — helpful context, not a medical
-          diagnosis.
+          {compact
+            ? "Patterns from your check-ins."
+            : "Patterns from your check-ins — helpful context, not a medical diagnosis."}
         </p>
       </header>
-      <SymptomInsightsContent data={data} embedded />
+      <SymptomInsightsContent
+        data={data}
+        embedded
+        showPhaseBreakdown={!compact}
+      />
     </section>
   );
 }

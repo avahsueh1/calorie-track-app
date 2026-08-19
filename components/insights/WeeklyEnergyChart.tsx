@@ -19,15 +19,13 @@ interface WeeklyEnergyChartProps {
   days: WeeklyNetDay[];
   tdeeTarget: number;
   targetRange: { min: number; max: number };
-  takeaway: string;
   tapHint: string;
   netNote: string;
-  footerMessage: string;
 }
 
-const CHART_WIDTH = 320;
-const CHART_HEIGHT = 168;
-const PADDING = { top: 10, right: 44, bottom: 28, left: 34 };
+const CHART_WIDTH = 640;
+const CHART_HEIGHT = 160;
+const PADDING = { top: 10, right: 44, bottom: 24, left: 32 };
 
 const CHART_COLORS = {
   nearTarget: "#7E9A7C",
@@ -152,10 +150,8 @@ export function WeeklyEnergyChart({
   days,
   tdeeTarget,
   targetRange,
-  takeaway,
   tapHint,
   netNote,
-  footerMessage,
 }: WeeklyEnergyChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -179,7 +175,7 @@ export function WeeklyEnergyChart({
 
   const targetY = scaleY(avgTarget, maxY, innerHeight);
   const slotWidth = innerWidth / days.length;
-  const barWidth = Math.min(28, slotWidth * 0.58);
+  const barWidth = slotWidth * 0.52;
   const highlightedIndex = hoveredIndex ?? selectedIndex;
   const selectedDay =
     selectedIndex === null ? null : days[selectedIndex] ?? null;
@@ -232,33 +228,24 @@ export function WeeklyEnergyChart({
 
   return (
     <section
+      className="insights-panel"
       style={{
         ...insightsCardStyle(),
-        padding: "14px 16px 12px",
+        padding: "14px 16px",
       }}
     >
-      <h2 style={insightsSectionTitleStyle()}>Weekly Net Calories</h2>
-
-      <p
-        style={{
-          margin: "10px 0 0",
-          fontFamily: insightsSerif,
-          fontSize: "1.02rem",
-          lineHeight: 1.45,
-          color: CHART_COLORS.text,
-        }}
-      >
-        {takeaway}
-      </p>
+      <h2 style={{ ...insightsSectionTitleStyle(), fontSize: "0.92rem" }}>
+        Weekly Net Calories
+      </h2>
 
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "8px",
-          marginTop: "12px",
-          padding: "10px 10px",
-          borderRadius: "14px",
+          gap: "6px",
+          marginTop: "8px",
+          padding: "7px 8px",
+          borderRadius: "10px",
           backgroundColor: "#FFFDFB",
           border: `1px solid ${insightsColors.border}`,
         }}
@@ -282,8 +269,9 @@ export function WeeklyEnergyChart({
             <p
               style={{
                 margin: 0,
-                fontFamily: insightsSerif,
-                fontSize: "0.92rem",
+                fontFamily: insightsSans,
+                fontSize: "0.82rem",
+                fontWeight: 600,
                 color: CHART_COLORS.text,
                 lineHeight: 1.15,
               }}
@@ -294,26 +282,15 @@ export function WeeklyEnergyChart({
         ))}
       </div>
 
-      <p
-        style={{
-          margin: "8px 0 0",
-          fontSize: "0.72rem",
-          lineHeight: 1.4,
-          color: CHART_COLORS.textSecondary,
-          fontFamily: insightsSans,
-        }}
-      >
-        {tapHint}
-      </p>
-
-      <div style={{ marginTop: "8px" }}>
-        <div style={{ position: "relative", overflow: "visible" }}>
+      <div className="weekly-chart-frame" style={{ marginTop: "8px" }}>
+        <div style={{ position: "relative", overflow: "visible", width: "100%", height: "100%" }}>
         <svg
           viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
           width="100%"
-          style={{ display: "block", minWidth: "280px" }}
+          height="100%"
+          preserveAspectRatio="xMidYMin meet"
           role="img"
-          aria-label="Weekly net calories bar chart with target line"
+          aria-label={`Weekly net calories bar chart with target line. ${tapHint}`}
         >
           {gridSteps.map((step) => {
             const y = scaleY(step, maxY, innerHeight);
@@ -407,7 +384,7 @@ export function WeeklyEnergyChart({
                       ? CHART_COLORS.text
                       : CHART_COLORS.textSecondary
                   }
-                  fontSize={10}
+                  fontSize={9}
                   fontFamily={insightsSans}
                   fontWeight={isHighlighted ? 600 : 400}
                   style={{ pointerEvents: "none" }}
@@ -436,18 +413,6 @@ export function WeeklyEnergyChart({
       {selectedDay && hoveredIndex === null ? (
         <DayDetailCard day={selectedDay} netNote={netNote} />
       ) : null}
-
-      <p
-        style={{
-          margin: "10px 0 0",
-          fontSize: "0.78rem",
-          lineHeight: 1.5,
-          color: CHART_COLORS.textSecondary,
-          fontFamily: insightsSans,
-        }}
-      >
-        {footerMessage}
-      </p>
     </section>
   );
 }

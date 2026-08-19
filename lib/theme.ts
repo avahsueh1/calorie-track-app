@@ -1,18 +1,21 @@
 import type { CSSProperties } from "react";
 
-/** Shared mobile app tokens — UI-agnostic, safe to reuse in React Native later. */
+/** Shared layout tokens for the web app shell. */
 export const layout = {
-  shellMaxWidth: "440px",
-  pagePadding: "16px",
-  cardGap: "18px",
-  cardRadius: "24px",
-  cardPadding: "20px",
-  cardPaddingCompact: "16px",
-  cardPaddingLarge: "24px",
+  /** @deprecated Use contentMaxWidth — kept for components that still reference shellMaxWidth. */
+  shellMaxWidth: "1120px",
+  sidebarWidth: "240px",
+  contentMaxWidth: "1120px",
+  pagePadding: "32px",
+  cardGap: "20px",
+  cardRadius: "20px",
+  cardPadding: "24px",
+  cardPaddingCompact: "18px",
+  cardPaddingLarge: "28px",
   sectionHeaderGap: "12px",
   touchMinHeight: "44px",
   buttonMinHeight: "44px",
-  navClearance: "18px",
+  navClearance: "0px",
 } as const;
 
 export const colors = {
@@ -56,31 +59,37 @@ export function pageOuterStyle(): CSSProperties {
     width: "100%",
     backgroundColor: colors.bg,
     display: "flex",
-    justifyContent: "center",
   };
 }
 
 export function shellStyle(): CSSProperties {
   return {
-    width: "100%",
-    maxWidth: layout.shellMaxWidth,
+    flex: 1,
+    minWidth: 0,
     minHeight: "100vh",
     backgroundColor: colors.shell,
     display: "flex",
     flexDirection: "column",
-    position: "relative",
   };
 }
 
 export function mainContentStyle(overrides?: CSSProperties): CSSProperties {
   return {
-    flex: 1,
     width: "100%",
-    padding: `${layout.pagePadding} ${layout.pagePadding} ${layout.navClearance}`,
+    padding: layout.pagePadding,
     display: "flex",
     flexDirection: "column",
     gap: layout.cardGap,
     ...overrides,
+  };
+}
+
+export function dashboardGridStyle(): CSSProperties {
+  return {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 0.9fr)",
+    gap: layout.cardGap,
+    alignItems: "start",
   };
 }
 

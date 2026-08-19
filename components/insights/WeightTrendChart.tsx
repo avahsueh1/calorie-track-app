@@ -31,9 +31,9 @@ interface WeightTrendChartProps {
   density?: "default" | "page";
 }
 
-const CHART_WIDTH = 320;
-const CHART_HEIGHT = 168;
-const PADDING = { top: 12, right: 16, bottom: 30, left: 40 };
+const CHART_WIDTH = 640;
+const CHART_HEIGHT = 160;
+const PADDING = { top: 12, right: 16, bottom: 28, left: 36 };
 
 const CHART_COLORS = {
   lineDown: "#7D9B8A",
@@ -81,7 +81,17 @@ export function WeightTrendChart({
   const innerHeight = CHART_HEIGHT - PADDING.top - PADDING.bottom;
 
   const shellStyle = embedded
-    ? { padding: 0, margin: 0, border: "none", background: "transparent", boxShadow: "none" }
+    ? {
+        padding: 0,
+        margin: 0,
+        border: "none",
+        background: "transparent",
+        boxShadow: "none",
+        flex: 1,
+        display: "flex",
+        flexDirection: "column" as const,
+        minHeight: 0,
+      }
     : density === "page"
       ? {
           ...insightsCardStyle(),
@@ -247,6 +257,7 @@ export function WeightTrendChart({
       ) : null}
 
       <div
+        className="weight-chart-frame"
         style={{
           marginTop:
             showMetricStrip || showTrendMessage
@@ -263,7 +274,8 @@ export function WeightTrendChart({
         <svg
           viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
           width="100%"
-          style={{ display: "block", minWidth: "280px" }}
+          height="100%"
+          preserveAspectRatio="xMidYMin meet"
           role="img"
           aria-label="Weight trend line chart"
         >

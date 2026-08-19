@@ -12,28 +12,27 @@ import { todayDateKey } from "../../lib/appStateHelpers";
 import { PatternInsightCards } from "../insights/PatternInsightCards";
 import { DayNotesSection } from "../insights/DayNotesSection";
 import { CheckInSummaryView } from "./CheckInSummaryView";
-import { cardStyle, colors, sans } from "./theme";
-import { spacing } from "../../lib/theme";
+import { AppCard } from "../ui/AppCard";
+import { colors, sans } from "./theme";
 
 function logCheckInButtonStyle() {
   return {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    height: "28px",
-    padding: "0 11px",
-    fontSize: "0.75rem",
-    fontWeight: 500,
-    color: "#744336",
-    backgroundColor: "#FFFDFC",
+    height: "32px",
+    padding: "0 14px",
+    fontSize: "0.78rem",
+    fontWeight: 600,
+    color: colors.terracotta,
+    backgroundColor: colors.card,
     borderRadius: "999px",
-    border: "1px solid #E8C9BC",
+    border: `1px solid ${colors.terracottaLight}`,
     cursor: "pointer",
     fontFamily: sans,
     flexShrink: 0,
     lineHeight: 1,
     textDecoration: "none",
-    WebkitTapHighlightColor: "transparent",
   } as const;
 }
 
@@ -46,87 +45,64 @@ export function TodayCheckInCard() {
     homeModules.showCycleInsights && patternInsightCards.length > 0;
 
   return (
-    <section
-      style={{
-        ...cardStyle(),
-        padding: 0,
-        backgroundColor: "transparent",
-        border: "none",
-        boxShadow: "none",
-        display: "flex",
-        flexDirection: "column",
-        gap: spacing.block,
-        width: "100%",
-      }}
-    >
+    <AppCard padding="standard">
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) auto",
-          columnGap: "8px",
-          rowGap: "4px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "12px",
+          marginBottom: "16px",
         }}
       >
-        <h2
-          style={{
-            margin: 0,
-            gridColumn: 1,
-            gridRow: 1,
-            alignSelf: "center",
-            fontFamily: sans,
-            fontSize: "1.625rem",
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
-            lineHeight: 1.15,
-            color: "#272018",
-            minWidth: 0,
-          }}
-        >
-          Today&apos;s check-in
-        </h2>
+        <div>
+          <h2
+            style={{
+              margin: 0,
+              fontFamily: sans,
+              fontSize: "1rem",
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              color: colors.text,
+            }}
+          >
+            Today&apos;s check-in
+          </h2>
+          <p
+            style={{
+              margin: "4px 0 0",
+              fontSize: "0.78rem",
+              color: colors.muted,
+              fontFamily: sans,
+            }}
+          >
+            {hasContent ? "Checked in today" : "Optional symptom logger"}
+          </p>
+        </div>
         <Link
           href={routes.logWithTab("check-in")}
-          style={{
-            ...logCheckInButtonStyle(),
-            gridColumn: 2,
-            gridRow: 1,
-            alignSelf: "center",
-            justifySelf: "end",
-          }}
+          style={logCheckInButtonStyle()}
         >
           {hasContent ? "Edit" : "Log check-in"}
         </Link>
-        <p
-          style={{
-            margin: 0,
-            gridColumn: 1,
-            gridRow: 2,
-            fontSize: "0.75rem",
-            color: colors.muted,
-            fontWeight: 500,
-            fontFamily: sans,
-          }}
-        >
-          {hasContent ? "Checked in today" : "Optional symptom logger"}
-        </p>
       </div>
 
       <CheckInSummaryView
-          saved={checkIn}
-          notesSection={
-            <DayNotesSection
-              dateKey={todayDateKey()}
-              entry={null}
-              variant="reminder"
-              placeholder="Add your personal thoughts about today..."
-            />
-          }
-          footerSection={
-            showInsights ? (
-              <PatternInsightCards cards={patternInsightCards} />
-            ) : null
-          }
-        />
-    </section>
+        saved={checkIn}
+        notesSection={
+          <DayNotesSection
+            dateKey={todayDateKey()}
+            entry={null}
+            variant="reminder"
+            placeholder="Add your personal thoughts about today..."
+          />
+        }
+        footerSection={
+          showInsights ? (
+            <PatternInsightCards cards={patternInsightCards} />
+          ) : null
+        }
+      />
+    </AppCard>
   );
 }

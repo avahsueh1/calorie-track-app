@@ -6,15 +6,23 @@ import { AppShell } from "../../components/ui/AppShell";
 import { BodyPatternCalendar } from "../../components/insights/BodyPatternCalendar";
 import { CALENDAR_COLORS } from "../../components/insights/bodyPatternCalendarUtils";
 import { InsightsHeader } from "../../components/insights/InsightsHeader";
+import { InsightsPatternCard } from "../../components/insights/InsightsPatternCard";
+import { InsightsSidebar } from "../../components/insights/InsightsSidebar";
 import { ProgressJournalSection } from "../../components/progress/ProgressJournalSection";
 import { WeeklyEnergyChart } from "../../components/insights/WeeklyEnergyChart";
 import {
+  insightsCardStyle,
+  insightsColors,
+  insightsSectionTitleStyle,
   insightsLayout,
   insightsMainStyle,
   insightsSans,
 } from "../../components/insights/theme";
+import { getCalorieTargetStatus } from "../../lib/calorieTargetStatus";
+import { formatWeightDisplay } from "../../lib/profileBody";
 import { routes } from "../../lib/routes";
 import {
+  useCycleContext,
   useInsightsData,
   useTrackingPreferences,
 } from "../../components/providers/AppStateProvider";
@@ -70,6 +78,7 @@ function InsightsCalendarEmptyState() {
 
 export default function InsightsPage() {
   const { trackingPreferences } = useTrackingPreferences();
+  const { cycleContext } = useCycleContext();
   const insightsModules = useMemo(
     () => getInsightsModules(trackingPreferences),
     [trackingPreferences],
@@ -77,7 +86,6 @@ export default function InsightsPage() {
 
   const {
     weeklyNetDays,
-    weeklyTakeaway,
     dailyCalorieTarget,
     dailyTargetRange,
     macroTargets,
@@ -90,12 +98,17 @@ export default function InsightsPage() {
     foodLogs,
     activityLogs,
     progressJournal,
+    patternInsightCards,
     calorieTrackingEnabled,
     cycleTrackingEnabled,
   } = useInsightsData();
 
   const showCalendar = insightsModules.showCalendar;
   const calendarVariant = cycleTrackingEnabled ? "cycle" : "nutrition";
+  const showCalories = insightsModules.showWeeklyEnergyChart;
+  const showJournal = insightsModules.showProgressJournal;
+  const showPatternCard =
+    insightsModules.showCycleHeader && patternInsightCards.length > 0;
 
   const entriesByDate = useMemo(() => {
     const mergedNotes = mergeInsightsDayNotes(
@@ -148,46 +161,151 @@ export default function InsightsPage() {
     max: dailyTargetRange.max,
   };
 
+  const avgNet = Math.round(
+    weeklyNetDays.reduce((sum, day) => sum + day.net, 0) / weeklyNetDays.length,
+  );
+  const avgTarget = Math.round(
+    weeklyNetDays.reduce((sum, day) => sum + day.target, 0) / weeklyNetDays.length,
+  );
+  const nearTargetPct = Math.round(
+    (weeklyNetDays.filter(
+      (day) =>
+        getCalorieTargetStatus({
+          eaten: day.eaten,
+          burned: day.burned,
+          target: day.target,
+          netCalories: day.net,
+        }) === "near",
+    ).length /
+      weeklyNetDays.length) *
+      100,
+  );
+  const latestWeight =
+    progressJournal[0]?.weightKg && progressJournal[0].weightKg > 0
+      ? formatWeightDisplay(progressJournal[0].weightKg, profile.units)
+      : "—";
+
   return (
-    <AppShell mainStyle={insightsMainStyle()}>
-      <InsightsHeader
-        loggedDaysCount={loggedDaysCount}
-        showCycleContext={insightsModules.showCycleHeader}
-      />
-
-      {insightsModules.showWeeklyEnergyChart ? (
-        <WeeklyEnergyChart
-          days={weeklyNetDays}
-          tdeeTarget={dailyCalorieTarget}
-          targetRange={targetRange}
-          takeaway={weeklyTakeaway}
-          tapHint={sampleWeeklyNetCopy.tapHint}
-          netNote={sampleWeeklyNetCopy.netNote}
-          footerMessage={sampleWeeklyNetCopy.footerMessage}
+    <AppShell mainStyle={insightsMainStyle({ gap: "14px", padding: "20px 24px" })}>
+      <div className="insights-home">
+        <InsightsHeader
+          loggedDaysCount={loggedDaysCount}
+          showCycleContext={insightsModules.showCycleHeader}
         />
-      ) : null}
 
-      {showCalendar ? (
-        <BodyPatternCalendar
-          key={calendarRevisionKey}
-          mode="insights"
-          calendarVariant={calendarVariant}
-          entriesByDate={entriesByDate}
-          dailyCheckIns={dailyCheckIns}
-          profile={profile}
-          macroTargets={macroTargets}
-          cycleSettings={effectiveCycleSettings}
-          periodLogs={periodLogs}
-          initialYear={calendarDefaults.initialYear}
-          initialMonth={calendarDefaults.initialMonth}
-        />
-      ) : (
-        <InsightsCalendarEmptyState />
-      )}
+        <section style={{ ...insightsCardStyle(), padding: "14px 16px" }}>
+          <div className="insights-frameb-statstrip">
+            <div className="insights-frameb-stat">
+              <p className="insights-frameb-label">Avg intake</p>
+              <p className="insights-frameb-value">{avgNet.toLocaleString()} kcal</p>
+            </div>
+            <div className="insights-frameb-stat">
+              <p className="insights-frameb-label">Avg target</p>
+              <p className="insights-frameb-value">{avgTarget.toLocaleString()} kcal</p>
+            </div>
+            <div className="insights-frameb-stat">
+              <p className="insights-frameb-label">Near target</p>
+              <p className="insights-frameb-value">{nearTargetPct}%</p>
+            </div>
+            <div className="insights-frameb-stat">
+              <p className="insights-frameb-label">Weight</p>
+              <p className="insights-frameb-value">{latestWeight}</p>
+            </div>
+            <div className="insights-frameb-stat">
+              <p className="insights-frameb-label">Days tracked</p>
+              <p className="insights-frameb-value">{loggedDaysCount}</p>
+            </div>
+          </div>
+        </section>
 
-      {insightsModules.showProgressJournal ? (
-        <ProgressJournalSection entries={progressJournal} units={profile.units} />
-      ) : null}
+        <div className="insights-frameb-body">
+          <div className="insights-frameb-left">
+            {showCalories ? (
+              <WeeklyEnergyChart
+                days={weeklyNetDays}
+                tdeeTarget={dailyCalorieTarget}
+                targetRange={targetRange}
+                tapHint={sampleWeeklyNetCopy.tapHint}
+                netNote={sampleWeeklyNetCopy.netNote}
+              />
+            ) : null}
+
+            {showJournal ? (
+              <ProgressJournalSection
+                entries={progressJournal}
+                units={profile.units}
+                variant="bento"
+              />
+            ) : null}
+
+            {insightsModules.showSymptomInsights ? (
+              <section style={{ ...insightsCardStyle(), padding: "14px 16px" }}>
+                <p style={{ ...insightsSectionTitleStyle(), marginBottom: "10px" }}>
+                  Most logged this cycle
+                </p>
+                <InsightsSidebar
+                  dailyCheckIns={dailyCheckIns}
+                  cycleSettings={effectiveCycleSettings}
+                  periodLogs={periodLogs}
+                  patternInsightCards={patternInsightCards}
+                  showSymptomInsights
+                  hidePatterns
+                  embedded
+                />
+              </section>
+            ) : null}
+          </div>
+
+          <div className="insights-frameb-right">
+            {showPatternCard ? (
+              <InsightsPatternCard card={patternInsightCards[0]} />
+            ) : (
+              <section style={{ ...insightsCardStyle(), padding: "14px 16px" }}>
+                <p className="insights-frameb-label">Right now</p>
+                <p
+                  style={{
+                    margin: "8px 0 0",
+                    fontSize: "1.2rem",
+                    color: insightsColors.text,
+                  }}
+                >
+                  {cycleContext.cycleDayLabel || "Cycle tracking off"}
+                </p>
+                <p style={{ margin: "4px 0 0", color: insightsColors.terracotta }}>
+                  {cycleContext.phaseLabel}
+                </p>
+              </section>
+            )}
+
+            {showCalendar ? (
+              <section style={{ ...insightsCardStyle(), padding: "14px 16px" }}>
+                <p style={{ ...insightsSectionTitleStyle(), marginBottom: "10px" }}>
+                  Cycle & check-in patterns
+                </p>
+                <BodyPatternCalendar
+                  key={calendarRevisionKey}
+                  mode="insights"
+                  calendarVariant={calendarVariant}
+                  entriesByDate={entriesByDate}
+                  dailyCheckIns={dailyCheckIns}
+                  profile={profile}
+                  macroTargets={macroTargets}
+                  cycleSettings={effectiveCycleSettings}
+                  periodLogs={periodLogs}
+                  initialYear={calendarDefaults.initialYear}
+                  initialMonth={calendarDefaults.initialMonth}
+                  density="compact"
+                  embedded
+                  showHeader={false}
+                  maxWidth="none"
+                />
+              </section>
+            ) : (
+              <InsightsCalendarEmptyState />
+            )}
+          </div>
+        </div>
+      </div>
     </AppShell>
   );
 }

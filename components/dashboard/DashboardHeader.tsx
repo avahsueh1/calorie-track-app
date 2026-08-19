@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { CycleContextDisplay, WellnessUser } from "../../types/wellness";
 import { routes } from "../../lib/routes";
 import { colors, sans, serif } from "./theme";
@@ -66,6 +67,7 @@ interface DashboardHeaderProps {
   cycle: CycleContextDisplay;
   userInitial: string;
   showCycleContext?: boolean;
+  actions?: ReactNode;
 }
 
 export function DashboardHeader({
@@ -73,6 +75,7 @@ export function DashboardHeader({
   cycle,
   userInitial,
   showCycleContext = true,
+  actions,
 }: DashboardHeaderProps) {
   return (
     <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -116,31 +119,41 @@ export function DashboardHeader({
           </h1>
         </div>
 
-        <Link
-          href={routes.profile}
-          aria-label="Go to profile"
+        <div
           style={{
-            width: "40px",
-            height: "40px",
-            borderRadius: "50%",
-            background: "linear-gradient(145deg, #F5E8E2 0%, #EDE4F0 100%)",
-            border: `1px solid ${colors.border}`,
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            fontFamily: serif,
-            fontSize: "0.95rem",
-            fontWeight: 500,
-            color: colors.terracotta,
+            gap: "10px",
             flexShrink: 0,
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.7)",
-            textDecoration: "none",
-            cursor: "pointer",
           }}
-          className="dashboard-profile-avatar-link"
         >
-          {userInitial}
-        </Link>
+          {actions}
+          <Link
+            href={routes.profile}
+            aria-label="Go to profile"
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              background: "linear-gradient(145deg, #F5E8E2 0%, #EDE4F0 100%)",
+              border: `1px solid ${colors.border}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontFamily: serif,
+              fontSize: "0.95rem",
+              fontWeight: 500,
+              color: colors.terracotta,
+              flexShrink: 0,
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.7)",
+              textDecoration: "none",
+              cursor: "pointer",
+            }}
+            className="dashboard-profile-avatar-link"
+          >
+            {userInitial}
+          </Link>
+        </div>
       </div>
 
       <div

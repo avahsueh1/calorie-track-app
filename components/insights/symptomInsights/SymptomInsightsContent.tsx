@@ -11,7 +11,9 @@ import { TopLoggedSymptoms } from "./TopLoggedSymptoms";
 interface SymptomInsightsContentProps {
   data: SymptomInsightsData;
   showPhaseBreakdown?: boolean;
+  showLoggingSummary?: boolean;
   embedded?: boolean;
+  compact?: boolean;
   variant?: "all" | "symptoms" | "cycle";
   excludeSymptomKeys?: SymptomKey[];
 }
@@ -19,7 +21,9 @@ interface SymptomInsightsContentProps {
 export function SymptomInsightsContent({
   data,
   showPhaseBreakdown = true,
+  showLoggingSummary = true,
   embedded = false,
+  compact = false,
   variant = "all",
   excludeSymptomKeys = [],
 }: SymptomInsightsContentProps) {
@@ -59,7 +63,7 @@ export function SymptomInsightsContent({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "14px",
+        gap: compact ? "8px" : "14px",
       }}
     >
       {showSymptoms ? (
@@ -69,9 +73,11 @@ export function SymptomInsightsContent({
             totalCheckInDays={data.totalCheckInDays}
             excludeSymptomKeys={excludeSymptomKeys}
             embedded
-            hideHeader={variant !== "all"}
+            compact={compact}
+            limit={compact ? 3 : 5}
+            hideHeader={compact || variant !== "all"}
           />
-          {variant === "all" || variant === "symptoms" ? (
+          {showLoggingSummary && (variant === "all" || variant === "symptoms") ? (
             <SymptomLoggingSummaryCard summary={data.loggingSummary} embedded />
           ) : null}
         </>

@@ -48,12 +48,14 @@ export function CalorieStatGrid({
   tileSize = "default",
   variant = "row",
   showLabel = true,
+  columns = 2,
 }: {
   summary: CalorieStatSummary;
   formatValue?: (value: number) => string;
   tileSize?: StatTileSize;
   variant?: StatTileVariant;
   showLabel?: boolean;
+  columns?: 2 | 4;
 }) {
   const supporting = variant === "supporting";
 
@@ -65,6 +67,7 @@ export function CalorieStatGrid({
       <StatTileGrid
         gap={supporting ? "8px" : "10px 12px"}
         supporting={supporting}
+        columns={columns}
       >
         <StatTile
           size={tileSize}

@@ -23,16 +23,16 @@ import { ProgressJournalPhotoThumb } from "./ProgressJournalEntryRow";
 interface ProgressJournalSectionProps {
   entries: ProgressJournalEntry[];
   units: UnitsPreference;
+  variant?: "default" | "bento";
 }
 
 function journalOpenButtonStyle(): CSSProperties {
   return {
-    display: "flex",
+    display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "100%",
-    marginTop: "14px",
-    padding: "10px 14px",
+    width: "fit-content",
+    padding: "7px 12px",
     borderRadius: "999px",
     border: `1px solid ${insightsColors.border}`,
     backgroundColor: insightsColors.cardSoft,
@@ -49,7 +49,9 @@ function journalOpenButtonStyle(): CSSProperties {
 export function ProgressJournalSection({
   entries,
   units,
+  variant = "default",
 }: ProgressJournalSectionProps) {
+  const isBento = variant === "bento";
   const stats = useMemo(
     () => buildProgressJournalStats(entries, units),
     [entries, units],
@@ -74,19 +76,37 @@ export function ProgressJournalSection({
     .join(" · ");
 
   return (
-    <section style={insightsCardStyle()}>
+    <section
+      className={`insights-panel ${isBento ? "insights-bento-journal" : ""}`}
+      style={{ ...insightsCardStyle(), padding: "14px 16px" }}
+    >
       <div
         style={{
           display: "flex",
-          alignItems: "center",
+          alignItems: isBento ? "flex-start" : "center",
           justifyContent: "space-between",
           gap: "12px",
-          marginBottom: hasEntries ? "8px" : "10px",
+          marginBottom: hasEntries ? "6px" : "8px",
         }}
       >
-        <h2 style={{ ...insightsSectionTitleStyle(), margin: 0 }}>
-          Progress Journal
-        </h2>
+        <div style={{ minWidth: 0 }}>
+          <h2 style={{ ...insightsSectionTitleStyle(), margin: 0 }}>
+            Progress Journal
+          </h2>
+          {hasEntries && isBento && summaryLine ? (
+            <p
+              style={{
+                margin: "2px 0 0",
+                fontSize: "0.72rem",
+                lineHeight: 1.35,
+                color: insightsColors.textSecondary,
+                fontFamily: insightsSans,
+              }}
+            >
+              {summaryLine}
+            </p>
+          ) : null}
+        </div>
         {hasEntries ? (
           <Link
             href={routes.progressJournal}
@@ -118,12 +138,12 @@ export function ProgressJournalSection({
         </p>
       ) : (
         <>
-          {summaryLine ? (
+          {summaryLine && !isBento ? (
             <p
               style={{
-                margin: "0 0 12px",
-                fontSize: "0.78rem",
-                lineHeight: 1.45,
+                margin: "0 0 8px",
+                fontSize: "0.76rem",
+                lineHeight: 1.4,
                 color: insightsColors.textSecondary,
                 fontFamily: insightsSans,
               }}
@@ -132,24 +152,20 @@ export function ProgressJournalSection({
             </p>
           ) : null}
 
-          {latest ? (
+          {latest && !isBento ? (
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "10px",
-                marginBottom: "12px",
-                padding: "8px 10px",
-                borderRadius: "12px",
-                backgroundColor: "#FFFDFB",
-                border: `1px solid ${insightsColors.border}`,
+                marginBottom: "8px",
               }}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p
                   style={{
                     margin: 0,
-                    fontSize: "0.72rem",
+                    fontSize: "0.7rem",
                     fontWeight: 600,
                     letterSpacing: "0.04em",
                     textTransform: "uppercase",
@@ -186,11 +202,17 @@ export function ProgressJournalSection({
             units={units}
             embedded
             showTitle={false}
+            showMetricStrip={false}
+            showTrendMessage={false}
           />
         </>
       )}
 
-      <Link href={routes.progressJournal} style={journalOpenButtonStyle()}>
+      <Link
+        href={routes.progressJournal}
+        className="insights-panel-footer"
+        style={journalOpenButtonStyle()}
+      >
         {hasEntries ? "View progress journal" : "Start progress journal"}
       </Link>
     </section>

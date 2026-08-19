@@ -47,12 +47,22 @@ const LEGEND_ICON_SIZE = 12;
 
 const LEGEND_STYLES = {
   container: {
-    marginTop: "14px",
+    marginTop: "12px",
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: "8px 12px",
     padding: "12px 14px",
     borderRadius: "16px",
+    backgroundColor: "#FAF7F2",
+    border: "1px solid #E6DAD0",
+  },
+  containerCompact: {
+    marginTop: "10px",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(108px, 1fr))",
+    gap: "6px 10px",
+    padding: "8px 10px",
+    borderRadius: "12px",
     backgroundColor: "#FAF7F2",
     border: "1px solid #E6DAD0",
   },
@@ -81,6 +91,9 @@ type CalendarBaseProps = {
   initialMonth: number;
   showHeader?: boolean;
   maxWidth?: string;
+  density?: "default" | "compact";
+  embedded?: boolean;
+  className?: string;
 };
 
 import type { DailyCheckIn } from "../../types";
@@ -108,26 +121,26 @@ type CycleLogCalendarProps = CalendarBaseProps & {
 export type BodyPatternCalendarProps = InsightsCalendarProps | CycleLogCalendarProps;
 
 function calendarSizes(compact: boolean) {
-  const gridGapPx = compact ? 8 : 12;
-  const weekRowSpacing = compact ? 18 : 20;
+  const gridGapPx = compact ? 5 : 8;
+  const weekRowSpacing = compact ? 10 : 14;
 
   return compact
     ? {
-        cellHeight: 46,
-        pillHeight: 42,
-        numberSize: "1rem",
-        iconSize: 13,
-        stackGap: 2,
-        todaySize: 48,
+        cellHeight: 34,
+        pillHeight: 30,
+        numberSize: "0.76rem",
+        iconSize: 10,
+        stackGap: 1,
+        todaySize: 36,
         weekRowMargin: weekRowSpacing - gridGapPx,
       }
     : {
-        cellHeight: 48,
-        pillHeight: 44,
-        numberSize: "1rem",
-        iconSize: 13,
+        cellHeight: 44,
+        pillHeight: 40,
+        numberSize: "0.88rem",
+        iconSize: 12,
         stackGap: 2,
-        todaySize: 50,
+        todaySize: 46,
         weekRowMargin: weekRowSpacing - gridGapPx,
       };
 }
@@ -604,17 +617,19 @@ function CalendarInsightCard({
   cycleDay,
   phase,
   isToday,
+  compact,
 }: {
   cycleDay: number;
   phase: string;
   isToday: boolean;
+  compact?: boolean;
 }) {
   return (
     <div
       style={{
-        marginTop: "12px",
-        padding: "14px 16px",
-        borderRadius: "16px",
+        marginTop: compact ? "10px" : "12px",
+        padding: compact ? "10px 12px" : "14px 16px",
+        borderRadius: compact ? "12px" : "16px",
         backgroundColor: "#FAF3EA",
         border: "1px solid #E8DDD2",
         fontFamily: insightsSans,
@@ -623,7 +638,7 @@ function CalendarInsightCard({
       <p
         style={{
           margin: 0,
-          fontSize: "0.8rem",
+          fontSize: compact ? "0.76rem" : "0.8rem",
           fontWeight: 600,
           color: CALENDAR_COLORS.text,
           lineHeight: 1.3,
@@ -632,25 +647,29 @@ function CalendarInsightCard({
         {isToday ? "Today · " : ""}
         Day {cycleDay} · {phase} phase
       </p>
-      <p
-        style={{
-          margin: "6px 0 0",
-          fontSize: "0.76rem",
-          lineHeight: 1.45,
-          color: CALENDAR_COLORS.secondary,
-        }}
-      >
-        {getPhaseInsightMessage(phase)}
-      </p>
+      {compact ? null : (
+        <p
+          style={{
+            margin: "6px 0 0",
+            fontSize: "0.76rem",
+            lineHeight: 1.45,
+            color: CALENDAR_COLORS.secondary,
+          }}
+        >
+          {getPhaseInsightMessage(phase)}
+        </p>
+      )}
     </div>
   );
 }
 
-function NutritionLegend() {
+function NutritionLegend({ compact }: { compact: boolean }) {
   const items: NutritionDayStatus[] = ["under", "near", "over", "noData"];
 
   return (
-    <div style={LEGEND_STYLES.container}>
+    <div
+      style={compact ? LEGEND_STYLES.containerCompact : LEGEND_STYLES.container}
+    >
       {items.map((status) => (
         <span key={status} style={LEGEND_STYLES.item}>
           <span
@@ -671,13 +690,13 @@ function NutritionLegend() {
   );
 }
 
-function PhaseLegend() {
+function PhaseLegend({ compact }: { compact: boolean }) {
   return (
     <div
       role="list"
       aria-label="Cycle phase legend"
       style={{
-        ...LEGEND_STYLES.container,
+        ...(compact ? LEGEND_STYLES.containerCompact : LEGEND_STYLES.container),
         fontFamily: insightsSans,
       }}
     >
@@ -718,10 +737,14 @@ export function BodyPatternCalendar(props: BodyPatternCalendarProps) {
     initialMonth,
     showHeader = true,
     maxWidth = insightsLayout.shellMaxWidth,
+    density = "default",
+    embedded = false,
+    className,
   } = props;
 
   const sectionRef = useRef<HTMLElement>(null);
-  const compact = useCompactCells(sectionRef);
+  const autoCompact = useCompactCells(sectionRef);
+  const compact = density === "compact" || autoCompact;
   const canHover = useCanHover();
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState({
@@ -732,8 +755,10 @@ export function BodyPatternCalendar(props: BodyPatternCalendarProps) {
   const insightsProfile = props.mode === "insights" ? props.profile : null;
   const calendarVariant =
     props.mode === "insights" ? props.calendarVariant : "cycle";
+  const isInsightsCompact =
+    density === "compact" && props.mode === "insights";
   const isCycleCalendar = calendarVariant === "cycle";
-  const gridGap = compact ? "8px" : "12px";
+  const gridGap = compact ? "6px" : "10px";
   const sizes = calendarSizes(compact);
   const monthCells = useMemo(
     () => buildMonthGrid(currentMonth.year, currentMonth.month),
@@ -801,8 +826,12 @@ export function BodyPatternCalendar(props: BodyPatternCalendarProps) {
   const headerSubtitle =
     props.mode === "insights"
       ? isCycleCalendar
-        ? `${sampleBodyPatternCalendarCopy.subtitle} ${sampleBodyPatternCalendarCopy.tapHint}`
-        : `${sampleBodyPatternCalendarCopy.nutritionSubtitle} ${sampleBodyPatternCalendarCopy.nutritionTapHint}`
+        ? compact
+          ? sampleBodyPatternCalendarCopy.tapHint
+          : `${sampleBodyPatternCalendarCopy.subtitle} ${sampleBodyPatternCalendarCopy.tapHint}`
+        : compact
+          ? sampleBodyPatternCalendarCopy.nutritionTapHint
+          : `${sampleBodyPatternCalendarCopy.nutritionSubtitle} ${sampleBodyPatternCalendarCopy.nutritionTapHint}`
       : "Tap a date to choose period start or end.";
 
   const headerTitle =
@@ -815,25 +844,39 @@ export function BodyPatternCalendar(props: BodyPatternCalendarProps) {
   return (
     <section
       ref={sectionRef}
-      style={{
-        width: "100%",
-        maxWidth,
-        margin: "0 auto",
-        padding: compact ? layout.cardPaddingCompact : layout.cardPadding,
-        borderRadius: "24px",
-        backgroundColor: CALENDAR_COLORS.card,
-        border: `1px solid ${CALENDAR_COLORS.border}`,
-        boxShadow: "0 2px 20px rgba(60, 43, 36, 0.05)",
-        boxSizing: "border-box",
-        overflow: "visible",
-      }}
+      className={className}
+      style={
+        embedded
+          ? {
+              width: "100%",
+              margin: 0,
+              padding: 0,
+              border: "none",
+              background: "transparent",
+              boxShadow: "none",
+              boxSizing: "border-box",
+              overflow: "visible",
+            }
+          : {
+              width: "100%",
+              maxWidth,
+              margin: "0 auto",
+              padding: compact ? "16px 18px" : layout.cardPadding,
+              borderRadius: layout.cardRadius,
+              backgroundColor: CALENDAR_COLORS.card,
+              border: `1px solid ${CALENDAR_COLORS.border}`,
+              boxShadow: "0 2px 20px rgba(60, 43, 36, 0.05)",
+              boxSizing: "border-box",
+              overflow: "visible",
+            }
+      }
     >
       {showHeader ? (
         <header>
           <h2
             style={{
               margin: 0,
-              fontSize: "1.05rem",
+              fontSize: compact ? "0.92rem" : "1.05rem",
               fontWeight: 600,
               color: CALENDAR_COLORS.text,
               fontFamily: insightsSans,
@@ -844,8 +887,8 @@ export function BodyPatternCalendar(props: BodyPatternCalendarProps) {
           <p
             style={{
               margin: "6px 0 0",
-              fontSize: "0.82rem",
-              lineHeight: 1.45,
+              fontSize: compact || isInsightsCompact ? "0.74rem" : "0.82rem",
+              lineHeight: 1.4,
               color: CALENDAR_COLORS.secondary,
               fontFamily: insightsSans,
             }}
@@ -857,7 +900,7 @@ export function BodyPatternCalendar(props: BodyPatternCalendarProps) {
 
       <div
         style={{
-          marginTop: showHeader ? "18px" : "0",
+          marginTop: showHeader ? (compact ? "12px" : "18px") : 0,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -937,13 +980,13 @@ export function BodyPatternCalendar(props: BodyPatternCalendarProps) {
         </button>
       </div>
 
-      {isCycleCalendar ? (
+      {isCycleCalendar && !isInsightsCompact ? (
         <PhaseTimelineStrip currentPhase={todayContext.phase} />
       ) : null}
 
       <div
         style={{
-          marginTop: "14px",
+          marginTop: compact ? "8px" : "14px",
           display: "grid",
           gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
           gap: gridGap,
@@ -1078,13 +1121,22 @@ export function BodyPatternCalendar(props: BodyPatternCalendarProps) {
         ))}
       </div>
 
-      {isCycleCalendar ? <PhaseLegend /> : <NutritionLegend />}
+      {isCycleCalendar && !embedded ? (
+        <PhaseLegend compact={compact || isInsightsCompact} />
+      ) : !isCycleCalendar && !embedded ? (
+        <NutritionLegend compact={compact || isInsightsCompact} />
+      ) : null}
 
-      {props.mode === "insights" && isCycleCalendar && todayContext.phase ? (
+      {props.mode === "insights" &&
+      isCycleCalendar &&
+      todayContext.phase &&
+      !embedded &&
+      !isInsightsCompact ? (
         <CalendarInsightCard
           cycleDay={todayContext.cycleDay}
           phase={todayContext.phase}
           isToday
+          compact={embedded || compact}
         />
       ) : null}
     </section>
