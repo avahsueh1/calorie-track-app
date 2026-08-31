@@ -18,7 +18,8 @@ async function fetchFoodCandidates(
     .from("foods")
     .select(FOOD_COLUMNS)
     .ilike("name", `%${query}%`)
-    .limit(CANDIDATE_POOL);
+    .limit(CANDIDATE_POOL)
+    .returns<FoodRow[]>();
 
   if (exact.error) {
     return { data: null, error: exact.error };
@@ -26,7 +27,7 @@ async function fetchFoodCandidates(
 
   const merged = new Map<string, FoodRow>();
   for (const row of exact.data ?? []) {
-    merged.set(row.id, row as FoodRow);
+    merged.set(row.id, row);
   }
 
   const prefix = fuzzySearchPrefix(query);
@@ -35,11 +36,12 @@ async function fetchFoodCandidates(
       .from("foods")
       .select(FOOD_COLUMNS)
       .ilike("name", `%${prefix}%`)
-      .limit(CANDIDATE_POOL);
+      .limit(CANDIDATE_POOL)
+      .returns<FoodRow[]>();
 
     if (!fuzzy.error) {
       for (const row of fuzzy.data ?? []) {
-        merged.set(row.id, row as FoodRow);
+        merged.set(row.id, row);
       }
     }
   }
@@ -87,7 +89,8 @@ export async function GET(request: Request) {
     .from("foods")
     .select(FOOD_COLUMNS)
     .order("name", { ascending: true })
-    .limit(limit);
+    .limit(limit)
+    .returns<FoodRow[]>();
 
   if (error) {
     return NextResponse.json(
@@ -96,7 +99,8 @@ export async function GET(request: Request) {
     );
   }
 
+  const foods: FoodRow[] = data ?? [];
   return NextResponse.json({
-    foods: (data ?? []).map(mapFoodRow),
+    foods: foods.map(mapFoodRow),
   });
 }
